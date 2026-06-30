@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>능력범위 체크리스트 (검증판)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0f1115; color: #e8e6e1;
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    padding: 18px 14px 60px; line-height: 1.5;
+  }
+  h1 { font-size: 18px; margin: 0 0 2px; font-weight: 700; letter-spacing: -0.2px; }
+  .sub { font-size: 12px; color: #9a9690; margin-bottom: 8px; }
+  .legend { font-size: 10.5px; color: #6a6862; margin: 4px 0 16px; line-height: 1.7; }
+  .topbar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .topbar input {
+    flex: 1; background: #16181d; border: 1px solid #2a2e36; color: #e8e6e1;
+    border-radius: 10px; padding: 9px 10px; font-size: 13px;
+  }
+  .btn {
+    background: #2a2e36; color: #e8e6e1; border: none;
+    border-radius: 10px; padding: 9px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .btn.primary { background: #d9a23b; color: #1a1300; }
+  .btn.ghost { background: transparent; border: 1px solid #2a2e36; }
+  .btn.small { padding: 5px 9px; font-size: 11px; }
+  .card {
+    background: #16181d; border: 1px solid #262a32; border-radius: 14px;
+    padding: 14px 14px 12px; margin-bottom: 12px;
+  }
+  .card h2 { font-size: 13.5px; margin: 0 0 4px; color: #d9a23b; font-weight: 700; }
+  .card .desc { font-size: 11.5px; color: #8d8a85; margin-bottom: 10px; }
+  label.row {
+    display: flex; align-items: flex-start; gap: 9px;
+    font-size: 13px; padding: 7px 0; border-top: 1px solid #1d2026; cursor: pointer;
+  }
+  label.row:first-of-type { border-top: none; }
+  label.row input[type=checkbox] {
+    margin-top: 3px; width: 16px; height: 16px; accent-color: #d9a23b; flex-shrink: 0;
+  }
+  textarea {
+    width: 100%; background: #11131a; border: 1px solid #262a32;
+    color: #e8e6e1; border-radius: 8px; padding: 8px 9px; font-size: 12.5px;
+    margin-top: 6px; min-height: 46px; resize: vertical; font-family: inherit;
+  }
+  textarea::placeholder { color: #5a5853; }
+  .tlabel { font-size: 12.5px; color: #c9c6c0; margin-top: 8px; display:block; }
+  .item-text { display: block; }
+  .src { display: block; font-size: 10px; color: #6a8caf; font-style: italic; margin-top: 2px; }
+  .src::before { content: "✓ "; color:#6fcf97; font-style:normal; }
+  .veto-note { display:block; font-size: 10px; color: #e8a23c; margin-top: 2px; }
+  .result { text-align: center; padding: 6px 0 4px; }
+  .score { font-size: 38px; font-weight: 800; color: #d9a23b; line-height: 1; }
+  .score-label { font-size: 11.5px; color: #8d8a85; margin-top: 2px; }
+  .verdict {
+    margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px;
+    font-weight: 600; text-align: left; line-height: 1.5;
+  }
+  .verdict.in { background: #16261d; color: #6fcf97; border: 1px solid #234d34; }
+  .verdict.border { background: #2a2410; color: #e8c23c; border: 1px solid #4d4317; }
+  .verdict.out { background: #2a1616; color: #e87a7a; border: 1px solid #4d2323; }
+  .bar { height: 8px; border-radius: 5px; background: #1d2026; overflow:hidden; margin-top:10px; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg,#e87a7a,#e8c23c,#6fcf97); transition: width .3s; }
+  .saved-list { font-size: 12px; }
+  .saved-item { display:flex; justify-content: space-between; align-items:center; padding: 8px 0; border-top: 1px solid #1d2026; }
+  .saved-item:first-child { border-top: none; }
+  .saved-item .meta { color:#9a9690; font-size: 11px; }
+  .saved-item .actions { display:flex; gap:6px; }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 6px; }
+  .badge.in { background:#16261d; color:#6fcf97; }
+  .badge.border { background:#2a2410; color:#e8c23c; }
+  .badge.out { background:#2a1616; color:#e87a7a; }
+  .empty { color:#6a6862; font-size: 12px; text-align:center; padding: 10px 0; }
+  .status { font-size:11px; color:#8d8a85; text-align:center; margin-top:6px; min-height:14px; }
+  .footnote { font-size:10.5px; color:#6a6862; line-height:1.7; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<h1>능력범위(Circle of Competence) 체크리스트</h1>
+<div class="sub">검증판 — 투자 거장이 실제로 말한 것으로 확인된 항목만 수록</div>
+<div class="legend">
+  ✓ 표시된 출처는 모두 해당 인물의 검증된 저작·발언에서 직접 도출했습니다.<br>
+  추론·응용으로 임의 구성했던 항목(어림계산·손절약속·분기추적·감정통제·새변수점검)은 전부 제거했습니다.
+</div>
+
+<div class="topbar">
+  <input id="ticker" placeholder="종목명 (예: 카카오)" />
+</div>
+
+<div class="card">
+  <h2>1. 2분 안에 설명할 수 있는가</h2>
+  <label class="row"><input type="checkbox" data-w="1"><span class="item-text">전문용어 없이 이 회사가 돈 버는 방식, 성공 조건, 그 앞에 놓인 위험을 2분 안에 설명할 수 있다<span class="src">피터 린치 — "2분 드릴(two-minute drill)", 『One Up on Wall Street』</span></span></label>
+</div>
+
+<div class="card">
+  <h2>2. 10년 후를 예측할 수 있는가</h2>
+  <label class="row"><input type="checkbox" data-w="1"><span class="item-text">이 회사의 이익이 5년·10년·20년 후 실질적으로 더 높을 것이라 합리적 확신을 가질 수 있다<span class="src">워런 버핏 — "이해하기 쉬운 사업 / 이익이 거의 확실히 높아질 기업", 1996년 주주서한</span></span></label>
+</div>
+
+<div class="card">
+  <h2>3. 반대편에서 생각해봤는가 (인버전)</h2>
+  <div class="desc">성공 이유가 아니라, 이 투자가 망하는 경로를 거꾸로 추적</div>
+  <label class="row"><input type="checkbox" data-w="1" data-veto="cap"><span class="item-text">이 투자를 실패로 이끌 경로를 거꾸로(역방향으로) 구체적으로 그려봤고, 그 위험에 답할 수 있다<span class="src">찰리 멍거 — 인버전("invert, always invert", 수학자 야코비에서 차용)</span><span class="veto-note">🚫 거부권 — 미충족 시 "범위 안" 등급 불가(최대 "경계")</span></span></label>
+</div>
+
+<div class="card">
+  <h2>4. 1차 자료를 직접 읽었는가</h2>
+  <label class="row"><input type="checkbox" data-w="1"><span class="item-text">남의 요약이 아니라 회사가 제출한 사업보고서·재무제표 원문(DART 등)을 직접 읽었고 이해했다<span class="src">벤저민 그레이엄 — 재무제표·연차보고서 직접 정독, 『증권분석』</span></span></label>
+</div>
+
+<div class="card">
+  <h2>5. 발로 뛰어 확인했는가 (스커틀벗)</h2>
+  <label class="row"><input type="checkbox" data-w="1"><span class="item-text">회사 바깥의 사람·자료(고객·경쟁사·전직원·앱 리뷰 등)를 통해 재무제표에 안 나오는 사실을 직접 확인했다<span class="src">필립 피셔 — 스커틀벗(scuttlebutt), 『Common Stocks and Uncommon Profits』</span></span></label>
+</div>
+
+<div class="card">
+  <h2>6. 틀렸음을 알 수 있는가 (반증가능성)</h2>
+  <div class="desc">어떤 사실이 관찰되면 이 판단이 틀린 것인지 미리 정의</div>
+  <span class="tlabel">이 투자 아이디어가 반증될 구체적 조건</span>
+  <textarea data-note="falsify" placeholder="예: 톡비즈 광고 매출 YoY가 2개 분기 연속 한 자릿수 초반으로 떨어지면 성장 논리가 깨진다"></textarea>
+  <label class="row"><input type="checkbox" data-w="1"><span class="item-text">위와 같이, 어떤 관찰이 나오면 이 판단이 틀린 것인지 반증 조건을 명시할 수 있다<span class="src">칼 포퍼 — 반증주의(falsifiability) / 조지 소로스가 투자에 계승</span></span></label>
+</div>
+
+<div class="card">
+  <div class="result">
+    <div class="score" id="scoreNum">0%</div>
+    <div class="score-label">충족률 (<span id="scoreFrac">0/6</span>)</div>
+    <div class="bar"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+    <div class="verdict out" id="verdictBox">먼저 항목을 체크해주세요.</div>
+  </div>
+  <div class="footnote">
+    ※ 능력범위 개념의 원전: 워런 버핏 1996년 버크셔 주주서한 — "범위의 크기가 아니라 그 경계를 아는 것이 핵심이다." 위 6개 항목은 이 개념을 진단하기 위해, 각기 다른 거장이 실제로 제시한 검증 도구를 모은 것입니다.
+  </div>
+</div>
+
+<div class="topbar">
+  <button class="btn primary" id="saveBtn" style="flex:1">진단 저장</button>
+  <button class="btn ghost" id="resetBtn">초기화</button>
+</div>
+<div class="status" id="statusMsg"></div>
+
+<div class="card">
+  <h2>저장된 진단</h2>
+  <div id="savedList" class="saved-list"><div class="empty">불러오는 중...</div></div>
+</div>
+
+<script>
+const INDEX_KEY = 'coc-index';
+const checkboxes = () => Array.from(document.querySelectorAll('input[type=checkbox][data-w]'));
+const textareas = () => Array.from(document.querySelectorAll('textarea'));
+const tickerInput = document.getElementById('ticker');
+const statusMsg = document.getElementById('statusMsg');
+
+function setStatus(msg, isError) {
+  statusMsg.textContent = msg;
+  statusMsg.style.color = isError ? '#e87a7a' : '#8d8a85';
+  if (msg) setTimeout(()=>{ if(statusMsg.textContent===msg) statusMsg.textContent=''; }, 2500);
+}
+
+function computeScore() {
+  const boxes = checkboxes();
+  const total = boxes.length;
+  const checked = boxes.filter(b=>b.checked).length;
+  const pct = total ? Math.round(checked/total*100) : 0;
+
+  const vetoCap = boxes.find(b => b.dataset.veto === 'cap');
+
+  document.getElementById('scoreNum').textContent = pct + '%';
+  document.getElementById('scoreFrac').textContent = checked + '/' + total;
+  document.getElementById('barFill').style.width = pct + '%';
+
+  const vb = document.getElementById('verdictBox');
+  vb.classList.remove('in','border','out');
+
+  let cls, msg;
+  if (pct >= 84) {
+    if (vetoCap && !vetoCap.checked) {
+      cls = 'border';
+      msg = '경계 지역 — 다른 항목은 충족했지만 인버전(반대편 사고)을 통과하지 못하면 "범위 안"으로 올라갈 수 없습니다. 호감을 분석으로 착각하고 있을 가능성.';
+    } else {
+      cls = 'in';
+      msg = '능력범위 안 — 6개 거장 테스트를 모두(또는 거의) 통과했습니다.';
+    }
+  } else if (pct >= 50) {
+    cls = 'border';
+    msg = '경계 지역(borderline) — 비어 있는 항목부터 보강 후 재평가.';
+  } else {
+    cls = 'out';
+    msg = '범위 밖 — 패스를 우선 고려하거나, 부족한 항목부터 채울 것.';
+  }
+  vb.classList.add(cls);
+  vb.textContent = msg;
+
+  return { pct, checked, total, cls };
+}
+
+function collectState() {
+  const answers = checkboxes().map(b => b.checked);
+  const notes = {};
+  textareas().forEach(t => { notes[t.dataset.note] = t.value; });
+  return { answers, notes };
+}
+
+function applyState(state) {
+  const boxes = checkboxes();
+  (state.answers || []).forEach((v,i) => { if (boxes[i]) boxes[i].checked = v; });
+  textareas().forEach(t => { t.value = (state.notes && state.notes[t.dataset.note]) || ''; });
+  computeScore();
+}
+
+function resetForm() {
+  checkboxes().forEach(b => b.checked = false);
+  textareas().forEach(t => t.value = '');
+  tickerInput.value = '';
+  computeScore();
+}
+
+async function loadIndex() {
+  try {
+    const raw = localStorage.getItem(INDEX_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
+}
+
+async function saveIndex(list) {
+  try { localStorage.setItem(INDEX_KEY, JSON.stringify(list)); }
+  catch (e) { setStatus('저장 실패: 인덱스', true); }
+}
+
+function verdictMeta(item) {
+  const cls = item.cls || (item.pct >= 84 ? 'in' : item.pct >= 50 ? 'border' : 'out');
+  const label = cls === 'in' ? '범위 안' : cls === 'border' ? '경계' : '범위 밖';
+  return { cls, label };
+}
+
+async function saveAssessment() {
+  const ticker = tickerInput.value.trim();
+  if (!ticker) { setStatus('종목명을 입력해주세요.', true); tickerInput.focus(); return; }
+  const { pct, cls } = computeScore();
+  const id = Date.now().toString(36);
+  const date = new Date().toISOString().slice(0,10);
+  const state = collectState();
+  const record = { id, ticker, date, pct, cls, ...state };
+  try {
+    localStorage.setItem('coc-record-' + id, JSON.stringify(record));
+    const idx = await loadIndex();
+    idx.unshift({ id, ticker, date, pct, cls });
+    await saveIndex(idx);
+    setStatus('저장 완료: ' + ticker + ' (' + pct + '%)');
+    renderSavedList();
+  } catch (e) { setStatus('저장 중 오류가 발생했습니다.', true); }
+}
+
+async function loadAssessment(id) {
+  try {
+    const raw = localStorage.getItem('coc-record-' + id);
+    if (!raw) { setStatus('불러오기 실패', true); return; }
+    const record = JSON.parse(raw);
+    tickerInput.value = record.ticker;
+    applyState(record);
+    setStatus(record.ticker + ' 불러옴 (' + record.date + ')');
+    window.scrollTo({top:0, behavior:'smooth'});
+  } catch (e) { setStatus('불러오기 중 오류', true); }
+}
+
+async function deleteAssessment(id) {
+  try {
+    localStorage.removeItem('coc-record-' + id);
+    const idx = await loadIndex();
+    await saveIndex(idx.filter(i => i.id !== id));
+    renderSavedList(); setStatus('삭제됨');
+  } catch (e) { setStatus('삭제 중 오류', true); }
+}
+
+async function renderSavedList() {
+  const listEl = document.getElementById('savedList');
+  const idx = await loadIndex();
+  if (!idx.length) {
+    listEl.innerHTML = '<div class="empty">아직 저장된 진단이 없습니다.</div>';
+    return;
+  }
+  listEl.innerHTML = idx.map(item => {
+    const vm = verdictMeta(item);
+    return `<div class="saved-item">
+      <div>
+        <strong>${item.ticker}</strong>
+        <span class="badge ${vm.cls}">${vm.label} · ${item.pct}%</span>
+        <div class="meta">${item.date}</div>
+      </div>
+      <div class="actions">
+        <button class="btn small ghost" data-load="${item.id}">불러오기</button>
+        <button class="btn small ghost" data-del="${item.id}">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+  listEl.querySelectorAll('[data-load]').forEach(btn=>{
+    btn.addEventListener('click', ()=> loadAssessment(btn.dataset.load));
+  });
+  listEl.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=> {
+      if (confirm('이 진단을 삭제할까요?')) deleteAssessment(btn.dataset.del);
+    });
+  });
+}
+
+checkboxes().forEach(b => b.addEventListener('change', computeScore));
+document.getElementById('saveBtn').addEventListener('click', saveAssessment);
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if (confirm('현재 입력을 모두 초기화할까요?')) resetForm();
+});
+
+computeScore();
+renderSavedList();
+</script>
+
+</body>
+</html>

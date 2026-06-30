@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>밸류에이션 4-모드 분석기</title>
+<style>
+  :root {
+    --bg: #0c0e12;
+    --panel: #15181f;
+    --panel-2: #1b1f28;
+    --line: #262b35;
+    --ink: #e9e7e2;
+    --dim: #8a8f9a;
+    --faint: #5a5f6a;
+    --accent: #00d4a0;
+    --accent-dim: #0a3d33;
+    --warn: #e8b04a;
+    --bad: #e86a6a;
+    --good: #5fd39a;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+    padding: 16px 14px 60px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 520px; margin: 0 auto; }
+  header { margin-bottom: 18px; }
+  h1 { font-size: 17px; margin: 0 0 3px; font-weight: 700; letter-spacing: -0.3px; }
+  .tagline { font-size: 11.5px; color: var(--dim); }
+  .tagline b { color: var(--accent); font-weight: 600; }
+
+  /* mode tabs */
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 16px; }
+  .mode {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
+    padding: 10px 11px; cursor: pointer; transition: all .15s; text-align: left;
+  }
+  .mode:hover { border-color: #38404d; }
+  .mode.active { border-color: var(--accent); background: var(--accent-dim); }
+  .mode .mlabel { font-size: 9.5px; color: var(--faint); letter-spacing: .5px; text-transform: uppercase; }
+  .mode.active .mlabel { color: var(--accent); }
+  .mode .mtitle { font-size: 12.5px; font-weight: 600; margin-top: 2px; }
+  .mode .mq { font-size: 10px; color: var(--dim); margin-top: 3px; line-height: 1.35; }
+
+  /* inputs */
+  .inputs { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px 14px; margin-bottom: 14px; }
+  .field { padding: 12px 0; border-top: 1px solid var(--line); }
+  .field:first-child { border-top: none; }
+  .field.solving { opacity: .45; }
+  .field-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .field-label { font-size: 12.5px; font-weight: 600; }
+  .field-sub { font-size: 10px; color: var(--faint); }
+  .field-val { font-family: var(--mono); font-size: 14px; color: var(--accent); font-weight: 600; }
+  .field.solving .field-val { color: var(--faint); }
+  .slider-row { display: flex; align-items: center; gap: 10px; }
+  input[type=range] {
+    flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 3px;
+    background: var(--line); outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 17px; height: 17px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid #0c0e12;
+  }
+  input[type=range]:disabled { opacity: .4; }
+  input[type=range]:disabled::-webkit-slider-thumb { background: var(--faint); }
+  input[type=number] {
+    width: 74px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 7px; padding: 6px 8px; font-family: var(--mono); font-size: 13px; text-align: right;
+  }
+  input[type=number]:disabled { opacity: .4; }
+
+  /* result readout — the signature element */
+  .readout {
+    background: linear-gradient(160deg, #14241f, #0e1518);
+    border: 1px solid #1f4a3d; border-radius: 16px; padding: 20px 18px; margin-bottom: 14px;
+    position: relative; overflow: hidden;
+  }
+  .readout::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: .6;
+  }
+  .readout-label { font-size: 10.5px; color: var(--accent); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 6px; }
+  .readout-value { font-family: var(--mono); font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -1px; }
+  .readout-unit { font-size: 20px; color: var(--dim); font-weight: 400; }
+  .readout-note { font-size: 11.5px; color: var(--dim); margin-top: 10px; line-height: 1.5; }
+  .readout.bad { background: linear-gradient(160deg, #241616, #18100e); border-color: #4a2020; }
+  .readout.bad .readout-label { color: var(--bad); }
+  .readout.bad .readout-value { color: var(--bad); }
+
+  /* interpretation chips */
+  .interp { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip {
+    flex: 1; min-width: 130px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .chip-label { font-size: 9.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .4px; }
+  .chip-value { font-family: var(--mono); font-size: 15px; font-weight: 600; margin-top: 3px; }
+  .chip-desc { font-size: 10.5px; color: var(--dim); margin-top: 2px; }
+
+  /* exit pbr (mode 4 only) */
+  .exit-field { display: none; }
+  .exit-field.show { display: block; }
+
+  /* save bar */
+  .savebar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .ticker-in {
+    flex: 1; background: var(--panel); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 10px; padding: 9px 11px; font-size: 13px;
+  }
+  .btn { border: none; border-radius: 10px; padding: 9px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .btn.primary { background: var(--accent); color: #04140f; }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+  .btn.sm { padding: 5px 9px; font-size: 11px; }
+  .status { font-size: 11px; color: var(--dim); text-align: center; min-height: 15px; margin-bottom: 10px; }
+
+  .saved { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .saved h3 { font-size: 12px; margin: 0 0 8px; color: var(--dim); font-weight: 600; }
+  .srow { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 12px; }
+  .srow:first-of-type { border-top: none; }
+  .srow .meta { font-size: 10px; color: var(--faint); }
+  .smode { font-size: 9px; padding: 1px 6px; border-radius: 5px; background: var(--panel-2); color: var(--dim); margin-left: 5px; }
+  .empty { color: var(--faint); font-size: 11.5px; text-align: center; padding: 8px 0; }
+
+  .footnote { font-size: 10px; color: var(--faint); line-height: 1.6; margin-top: 14px; }
+  .formula { font-family: var(--mono); font-size: 10.5px; color: var(--dim); background: var(--panel); border:1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-top: 8px; overflow-x: auto; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>밸류에이션 4-모드 분석기</h1>
+  <div class="tagline"><b>PBR · 초과ROE · 지속기간 · 요구수익률</b> — 3개를 알면 나머지 1개가 풀린다</div>
+</header>
+
+<div class="modes" id="modes">
+  <button class="mode active" data-mode="pbr">
+    <div class="mlabel">MODE 1 · 적정가</div>
+    <div class="mtitle">적정 PBR 계산</div>
+    <div class="mq">이 회사의 정당한 PBR은?</div>
+  </button>
+  <button class="mode" data-mode="roe">
+    <div class="mlabel">MODE 2 · 역산</div>
+    <div class="mtitle">내재 ROE</div>
+    <div class="mq">이 가격이 정당화되려면 ROE 몇 %?</div>
+  </button>
+  <button class="mode" data-mode="n">
+    <div class="mlabel">MODE 3 · 역산</div>
+    <div class="mtitle">내재 지속기간</div>
+    <div class="mq">시장은 moat 수명을 몇 년으로 보나?</div>
+  </button>
+  <button class="mode" data-mode="ret">
+    <div class="mlabel">MODE 4 · 수익률</div>
+    <div class="mtitle">장기 기대수익률</div>
+    <div class="mq">이 가격에 사면 연 몇 % 버나?</div>
+  </button>
+</div>
+
+<div class="readout" id="readout">
+  <div class="readout-label" id="roLabel">적정 PBR</div>
+  <div><span class="readout-value" id="roValue">2.39</span><span class="readout-unit" id="roUnit">×</span></div>
+  <div class="readout-note" id="roNote"></div>
+</div>
+
+<div class="interp" id="interp"></div>
+
+<div class="inputs" id="inputs">
+  <!-- PBR -->
+  <div class="field" data-var="pbr">
+    <div class="field-head">
+      <div><span class="field-label">시장 PBR</span> <span class="field-sub">현재 거래 배수</span></div>
+      <div class="field-val" id="v-pbr">1.50</div>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="s-pbr" min="0.2" max="10" step="0.05" value="1.5">
+      <input type="number" id="n-pbr" min="0.2" max="20" step="0.05" value="1.5">
+    </div>
+  </div>
+  <!-- ROE -->
+  <div class="field" data-var="roe">
+    <div class="field-head">
+      <div><span class="field-label">ROE</span> <span class="field-sub">자기자본이익률</span></div>
+      <div class="field-val" id="v-roe">20.0%</div>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="s-roe" min="1" max="60" step="0.5" value="20">
+      <input type="number" id="n-roe" min="1" max="100" step="0.5" value="20">
+    </div>
+  </div>
+  <!-- N -->
+  <div class="field" data-var="n">
+    <div class="field-head">
+      <div><span class="field-label">지속기간 N</span> <span class="field-sub">초과수익 유지 연수</span></div>
+      <div class="field-val" id="v-n">10</div>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="s-n" min="1" max="40" step="1" value="10">
+      <input type="number" id="n-n" min="1" max="50" step="1" value="10">
+    </div>
+  </div>
+  <!-- r -->
+  <div class="field" data-var="r">
+    <div class="field-head">
+      <div><span class="field-label">요구수익률 r</span> <span class="field-sub">할인율</span></div>
+      <div class="field-val" id="v-r">10.0%</div>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="s-r" min="3" max="20" step="0.5" value="10">
+      <input type="number" id="n-r" min="1" max="30" step="0.5" value="10">
+    </div>
+  </div>
+  <!-- exit PBR (mode 4) -->
+  <div class="field exit-field" data-var="exit" id="exitField">
+    <div class="field-head">
+      <div><span class="field-label">청산 PBR</span> <span class="field-sub">N년 뒤 매도 시 배수</span></div>
+      <div class="field-val" id="v-exit">1.00</div>
+    </div>
+    <div class="slider-row">
+      <input type="range" id="s-exit" min="0.3" max="5" step="0.05" value="1.0">
+      <input type="number" id="n-exit" min="0.2" max="10" step="0.05" value="1.0">
+    </div>
+  </div>
+</div>
+
+<div class="savebar">
+  <input class="ticker-in" id="ticker" placeholder="종목명 (예: 삼성전자)">
+  <button class="btn primary" id="saveBtn">저장</button>
+</div>
+<div class="status" id="status"></div>
+
+<div class="saved">
+  <h3>저장된 분석</h3>
+  <div id="savedList"><div class="empty">불러오는 중...</div></div>
+</div>
+
+<div class="footnote" id="footnote"></div>
+</div>
+
+<script>
+// ---------- core model ----------
+// 전액 유보 가정: 자기자본이 ROE로 복리 성장. 적정 PBR = 잔여이익 모델.
+function fairPBR(roe, r, N) {
+  let pbr = 1.0;
+  for (let t = 1; t <= N; t++) {
+    const equityBegin = Math.pow(1 + roe, t - 1);
+    pbr += (roe - r) * equityBegin / Math.pow(1 + r, t);
+  }
+  return pbr;
+}
+// Mode 2: ROE 역산 (이분법)
+function solveROE(pbrMkt, r, N) {
+  let lo = r, hi = 2.0;
+  if (pbrMkt <= 1) { lo = 0.0; hi = r; } // 저평가/가치파괴 구간
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) / 2;
+    if (fairPBR(mid, r, N) < pbrMkt) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+// Mode 3: N 역산 (보간)
+function solveN(pbrMkt, roe, r) {
+  if (Math.abs(roe - r) < 1e-9) return null;
+  if (roe > r && pbrMkt <= 1) return 0;
+  if (roe < r && pbrMkt >= 1) return 0;
+  let prev = 1.0;
+  for (let N = 1; N <= 300; N++) {
+    const cur = fairPBR(roe, r, N);
+    if ((prev < pbrMkt && pbrMkt <= cur) || (prev > pbrMkt && pbrMkt >= cur)) {
+      const frac = (pbrMkt - prev) / (cur - prev);
+      return (N - 1) + frac;
+    }
+    prev = cur;
+  }
+  return null;
+}
+// Mode 4: 장기 기대수익률 (IRR-style)
+function impliedReturn(pbrEntry, roe, N, pbrExit) {
+  const total = Math.pow(1 + roe, N) * (pbrExit / pbrEntry);
+  return Math.pow(total, 1 / N) - 1;
+}
+
+// ---------- state ----------
+let mode = 'pbr';
+const ids = ['pbr','roe','n','r','exit'];
+const val = { pbr:1.5, roe:0.20, n:10, r:0.10, exit:1.0 };
+// which variable is the OUTPUT (solved) for each mode
+const solvedVar = { pbr:'pbr', roe:'roe', n:'n', ret:null };
+
+function fmt(x, d=2){ return x.toFixed(d); }
+function pct(x, d=1){ return (x*100).toFixed(d) + '%'; }
+
+function syncFieldDisplays() {
+  document.getElementById('v-pbr').textContent = fmt(val.pbr);
+  document.getElementById('v-roe').textContent = pct(val.roe);
+  document.getElementById('v-n').textContent = Math.round(val.n);
+  document.getElementById('v-r').textContent = pct(val.r);
+  document.getElementById('v-exit').textContent = fmt(val.exit);
+}
+
+function setFieldEnabled(varName, enabled) {
+  const f = document.querySelector(`.field[data-var="${varName}"]`);
+  if (!f) return;
+  f.classList.toggle('solving', !enabled);
+  const s = document.getElementById('s-' + varName);
+  const n = document.getElementById('n-' + varName);
+  if (s) s.disabled = !enabled;
+  if (n) n.disabled = !enabled;
+}
+
+function compute() {
+  const ro = document.getElementById('readout');
+  const roLabel = document.getElementById('roLabel');
+  const roValue = document.getElementById('roValue');
+  const roUnit = document.getElementById('roUnit');
+  const roNote = document.getElementById('roNote');
+  const interp = document.getElementById('interp');
+  ro.classList.remove('bad');
+  interp.innerHTML = '';
+
+  // toggle exit field
+  document.getElementById('exitField').classList.toggle('show', mode === 'ret');
+
+  // enable/disable fields by mode
+  setFieldEnabled('pbr', mode !== 'pbr');
+  setFieldEnabled('roe', mode !== 'roe');
+  setFieldEnabled('n',   mode !== 'n');
+  setFieldEnabled('r',   true);
+  setFieldEnabled('exit', mode === 'ret');
+
+  if (mode === 'pbr') {
+    const out = fairPBR(val.roe, val.r, Math.round(val.n));
+    roLabel.textContent = '적정 PBR';
+    roValue.textContent = out < 0 ? '0.00' : fmt(out);
+    roUnit.textContent = '×';
+    const gap = out / val.pbr;
+    roNote.innerHTML = `ROE ${pct(val.roe,0)}가 ${Math.round(val.n)}년간 지속된다면, 장부가의 <b>${fmt(out)}배</b>가 정당. ` +
+      (gap >= 1.15 ? `시장 PBR ${fmt(val.pbr)} 대비 <span style="color:var(--good)">저평가</span> (적정/시장 = ${fmt(gap)})` :
+       gap <= 0.87 ? `시장 PBR ${fmt(val.pbr)} 대비 <span style="color:var(--bad)">고평가</span> (적정/시장 = ${fmt(gap)})` :
+       `시장 PBR ${fmt(val.pbr)}과 <span style="color:var(--warn)">대체로 부합</span>`);
+    chips([
+      ['적정/시장', fmt(gap), gap>=1.15?'저평가':gap<=0.87?'고평가':'적정'],
+      ['초과ROE', pct(val.roe - val.r,1), val.roe>val.r?'가치창출':'가치파괴'],
+    ]);
+  }
+  else if (mode === 'roe') {
+    const out = solveROE(val.pbr, val.r, Math.round(val.n));
+    roLabel.textContent = '내재 ROE';
+    roValue.textContent = pct(out,1).replace('%','');
+    roUnit.textContent = '%';
+    roNote.innerHTML = `시장 PBR ${fmt(val.pbr)}가 정당화되려면, 이 회사는 ${Math.round(val.n)}년간 <b>ROE ${pct(out,1)}</b>를 유지해야 함. ` +
+      `현재 실제 ROE와 비교해 달성 가능한지 판단.`;
+    chips([
+      ['요구 ROE', pct(out,1), '시장 기대치'],
+      ['초과ROE', pct(out - val.r,1), out>val.r?'프리미엄 필요':'-'],
+    ]);
+  }
+  else if (mode === 'n') {
+    const out = solveN(val.pbr, val.roe, val.r);
+    roLabel.textContent = '내재 지속기간';
+    if (out === null || out < 0) {
+      ro.classList.add('bad');
+      roValue.textContent = '—';
+      roUnit.textContent = '';
+      roNote.innerHTML = (val.roe <= val.r)
+        ? `ROE(${pct(val.roe,0)}) ≤ 요구수익률(${pct(val.r,0)})이라 초과수익이 없음. 이 경우 PBR 1 초과는 이 모델로 설명 불가 — 시장이 ROE 개선을 기대하거나 자산가치를 다르게 보는 중.`
+        : `해당 PBR을 만들 수 있는 지속기간이 범위 밖.`;
+    } else {
+      roValue.textContent = fmt(out,1);
+      roUnit.textContent = '년';
+      roNote.innerHTML = `시장 PBR ${fmt(val.pbr)}는, ROE ${pct(val.roe,0)}가 <b>약 ${fmt(out,1)}년</b> 지속된다는 가정을 담고 있음. ` +
+        (out > 20 ? `<span style="color:var(--bad)">20년 초과 — 매우 낙관적</span>. 그만한 moat가 있는지 의심.` :
+         out > 12 ? `<span style="color:var(--warn)">다소 긴 편</span> — 강한 moat 필요.` :
+         `<span style="color:var(--good)">현실적 범위</span>.`);
+      chips([
+        ['내재 N', fmt(out,1)+'년', '시장 가정'],
+        ['연 환산 자본성장', pct(val.roe,0), '전액 유보 시'],
+      ]);
+    }
+  }
+  else if (mode === 'ret') {
+    const out = impliedReturn(val.pbr, val.roe, Math.round(val.n), val.exit);
+    roLabel.textContent = '장기 기대수익률 (연율)';
+    roValue.textContent = pct(out,1).replace('%','');
+    roUnit.textContent = '%/년';
+    if (out < val.r) ro.classList.add('bad');
+    const equityMult = Math.pow(1+val.roe, Math.round(val.n));
+    roNote.innerHTML = `PBR ${fmt(val.pbr)}에 사서 ${Math.round(val.n)}년 뒤 PBR ${fmt(val.exit)}에 팔면 연 <b>${pct(out,1)}</b>. ` +
+      (out >= val.r+0.02 ? `<span style="color:var(--good)">요구수익률 ${pct(val.r,0)} 초과 — 매력적</span>` :
+       out < val.r ? `<span style="color:var(--bad)">요구수익률 ${pct(val.r,0)} 미달</span>` :
+       `<span style="color:var(--warn)">요구수익률과 비슷</span>`);
+    chips([
+      ['자본 성장', fmt(equityMult,2)+'×', `${Math.round(val.n)}년 후`],
+      ['밸류 변화', fmt(val.exit/val.pbr,2)+'×', val.exit>=val.pbr?'재평가 이익':'재평가 손실'],
+    ]);
+  }
+
+  syncFieldDisplays();
+  renderFootnote();
+}
+
+function chips(arr) {
+  const interp = document.getElementById('interp');
+  interp.innerHTML = arr.map(([label,value,desc])=>`
+    <div class="chip">
+      <div class="chip-label">${label}</div>
+      <div class="chip-value">${value}</div>
+      <div class="chip-desc">${desc}</div>
+    </div>`).join('');
+}
+
+function renderFootnote() {
+  const f = document.getElementById('footnote');
+  const formulas = {
+    pbr: 'PBR* = 1 + Σ [(ROE−r)·(1+ROE)^(t−1)] / (1+r)^t  ,  t=1..N',
+    roe: 'ROE 역산: PBR*(ROE)=시장PBR 을 만족하는 ROE를 수치해법으로',
+    n:   'N 역산: PBR*(N)=시장PBR 을 만족하는 N을 보간으로',
+    ret: '연수익률 = [(1+ROE)^N · (청산PBR/진입PBR)]^(1/N) − 1'
+  };
+  f.innerHTML = `<div class="formula">${formulas[mode]}</div>
+    <div style="margin-top:8px">※ 전액 유보(무배당) 가정. 실제 배당 기업은 자기자본 성장률이 ROE보다 낮아 결과가 달라집니다. 이 도구는 사고의 보조이지 정밀 가치평가가 아닙니다.</div>`;
+}
+
+// ---------- wire inputs ----------
+ids.forEach(id => {
+  const s = document.getElementById('s-' + id);
+  const n = document.getElementById('n-' + id);
+  const apply = (raw) => {
+    let v = parseFloat(raw);
+    if (isNaN(v)) return;
+    if (id === 'roe' || id === 'r') val[id] = v / 100;
+    else val[id] = v;
+    // sync the paired control
+    if (s && document.activeElement !== s) s.value = (id==='roe'||id==='r') ? v : v;
+    if (n && document.activeElement !== n) n.value = v;
+    compute();
+  };
+  if (s) s.addEventListener('input', e => {
+    const raw = e.target.value;
+    if (n) n.value = raw;
+    apply(raw);
+  });
+  if (n) n.addEventListener('input', e => {
+    const raw = e.target.value;
+    if (s) s.value = raw;
+    apply(raw);
+  });
+});
+
+// mode switching
+document.querySelectorAll('.mode').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    compute();
+  });
+});
+
+// ---------- persistence (localStorage) ----------
+const IDX = 'val4-index';
+const status = document.getElementById('status');
+function setStatus(m, err){ status.textContent = m; status.style.color = err?'var(--bad)':'var(--dim)';
+  if(m) setTimeout(()=>{ if(status.textContent===m) status.textContent=''; }, 2500); }
+
+function loadIndex(){ try { const r = localStorage.getItem(IDX); return r?JSON.parse(r):[]; } catch(e){ return []; } }
+function saveIndex(l){ try { localStorage.setItem(IDX, JSON.stringify(l)); } catch(e){ setStatus('저장 실패',true); } }
+
+const modeNames = { pbr:'적정PBR', roe:'내재ROE', n:'내재N', ret:'기대수익률' };
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const ticker = document.getElementById('ticker').value.trim();
+  if (!ticker){ setStatus('종목명을 입력하세요', true); return; }
+  const id = Date.now().toString(36);
+  const rec = { id, ticker, mode, date: new Date().toISOString().slice(0,10), val: {...val} };
+  try {
+    localStorage.setItem('val4-rec-'+id, JSON.stringify(rec));
+    const idx = loadIndex(); idx.unshift({ id, ticker, mode, date: rec.date });
+    saveIndex(idx); setStatus('저장됨: '+ticker); renderSaved();
+  } catch(e){ setStatus('저장 오류', true); }
+});
+
+function loadRec(id){
+  try {
+    const r = localStorage.getItem('val4-rec-'+id); if(!r) return;
+    const rec = JSON.parse(r);
+    document.getElementById('ticker').value = rec.ticker;
+    Object.assign(val, rec.val);
+    // restore mode
+    document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active', b.dataset.mode===rec.mode));
+    mode = rec.mode;
+    // push values into controls
+    ids.forEach(k=>{
+      const dispVal = (k==='roe'||k==='r') ? val[k]*100 : val[k];
+      const s=document.getElementById('s-'+k), n=document.getElementById('n-'+k);
+      if(s) s.value = dispVal; if(n) n.value = dispVal;
+    });
+    compute(); setStatus(rec.ticker+' 불러옴');
+    window.scrollTo({top:0,behavior:'smooth'});
+  } catch(e){ setStatus('불러오기 오류', true); }
+}
+
+function delRec(id){
+  try { localStorage.removeItem('val4-rec-'+id);
+    saveIndex(loadIndex().filter(i=>i.id!==id)); renderSaved(); setStatus('삭제됨');
+  } catch(e){ setStatus('삭제 오류', true); }
+}
+
+function renderSaved(){
+  const el = document.getElementById('savedList');
+  const idx = loadIndex();
+  if(!idx.length){ el.innerHTML = '<div class="empty">아직 저장된 분석이 없습니다.</div>'; return; }
+  el.innerHTML = idx.map(it=>`
+    <div class="srow">
+      <div><strong>${it.ticker}</strong><span class="smode">${modeNames[it.mode]||it.mode}</span>
+        <div class="meta">${it.date}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn ghost sm" data-load="${it.id}">불러오기</button>
+        <button class="btn ghost sm" data-del="${it.id}">삭제</button>
+      </div>
+    </div>`).join('');
+  el.querySelectorAll('[data-load]').forEach(b=>b.addEventListener('click',()=>loadRec(b.dataset.load)));
+  el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{ if(confirm('삭제할까요?')) delRec(b.dataset.del); }));
+}
+
+// init
+compute();
+renderSaved();
+</script>
+</body>
+</html>
