@@ -42,6 +42,7 @@
 
   .tool .tnum { font-family: var(--mono); font-size: 10px; letter-spacing: 1px; }
   .tool.coc .tnum { color: var(--gold); }
+  .tool.prem .tnum { color: #c98f4b; }
   .tool.val .tnum { color: var(--accent); }
   .tool h2 { font-size: 16px; margin: 6px 0 4px; font-weight: 700; }
   .tool .tdesc { font-size: 12px; color: var(--dim); line-height: 1.55; padding-right: 24px; }
@@ -54,6 +55,7 @@
     position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
   }
   .tool.coc .accent-line { background: var(--gold); }
+  .tool.prem .accent-line { background: #c98f4b; }
   .tool.val .accent-line { background: var(--accent); }
 
   .note {
@@ -70,8 +72,8 @@
     <span class="v">v1.0</span>
   </div>
   <div class="intro">
-    가치투자 거장들의 검증된 원칙과 잔여이익 가치평가 모델을 실전 도구로 옮긴 모음.
-    각 도구는 종목별 기록을 브라우저에 저장합니다(서버 전송 없음).
+    현재 주식을 포함한 자산시장을 이해하고, 투자 아이디어를 얻는다.<br>
+    투자 철학과 기본기도 다진다.
   </div>
 
   <p class="eyebrow">도구</p>
@@ -86,9 +88,19 @@
     </div>
   </a>
 
+  <a class="tool prem" href="index_premium.html">
+    <span class="accent-line"></span>
+    <div class="tnum">TOOL 02 · 프리미엄 평가</div>
+    <h2>기업 프리미엄 체크리스트</h2>
+    <div class="tdesc">이 사업이 높은 멀티플을 받을 자격이 있는가 — 11개 요소로 점검하고, 그 자격과 시장이 주는 프리미엄 사이의 간극에서 매수·매도 신호를 읽는다.</div>
+    <div class="ttags">
+      <span class="tag">반복구매</span><span class="tag">락인</span><span class="tag">가격결정력</span><span class="tag">3×3 매트릭스</span>
+    </div>
+  </a>
+
   <a class="tool val" href="index_roe.html">
     <span class="accent-line"></span>
-    <div class="tnum">TOOL 02 · 정량 분석</div>
+    <div class="tnum">TOOL 03 · 정량 분석</div>
     <h2>밸류에이션 4-모드 분석기</h2>
     <div class="tdesc">PBR·초과ROE·지속기간·요구수익률 중 3개를 알면 나머지 1개를 역산. 적정가, 내재 ROE, 시장이 가정하는 moat 수명, 장기 기대수익률을 한 화면에서.</div>
     <div class="ttags">
@@ -97,7 +109,7 @@
   </a>
 
   <div class="note">
-    <b>정성 → 정량 순서.</b> 능력범위 안에 있는 종목인지 먼저 가린 뒤, 그 종목에만 밸류에이션 분석기를 적용하는 흐름을 의도했습니다.
+    <b>능력범위 → 프리미엄 → 밸류에이션 순서.</b> ① 내가 판단할 자격이 있는 종목인지 가리고 → ② 그 사업이 프리미엄을 받을 자격이 있는지 본 뒤 → ③ 실제 숫자로 적정가·기대수익률을 계산하는 흐름을 의도했습니다.
     저장된 데이터는 기기·브라우저별로 분리되며 다른 기기에서는 보이지 않습니다.
   </div>
 </div>
