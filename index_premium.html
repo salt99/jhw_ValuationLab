@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0E1116" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="프리미엄 체크" />
+<title>기업 프리미엄 평가 체크리스트 · Valuation Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  :root{
+    --bg:#0E1116;
+    --panel:#161A22;
+    --panel-2:#1C212B;
+    --border:#2A303C;
+    --border-soft:#222732;
+    --ink:#E8E6E0;
+    --muted:#8A93A2;
+    --muted-dim:#5C6470;
+    --gold:#C9A24B;
+    --gold-dim:#8A7335;
+    --buy:#4FB286;
+    --sell:#D9685F;
+    --warn:#D9A441;
+    --shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(201,162,75,.06), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Pretendard','Pretendard Variable',system-ui,sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    padding:0 16px 80px;
+    padding-left:calc(16px + env(safe-area-inset-left));
+    padding-right:calc(16px + env(safe-area-inset-right));
+    padding-bottom:calc(80px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  header.hero{
+    padding:42px 0 26px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:8px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--gold);margin:0 0 14px;
+  }
+  h1{
+    font-family:'Newsreader',serif;
+    font-weight:500;font-size:clamp(28px,5vw,42px);
+    line-height:1.12;margin:0 0 14px;letter-spacing:-.01em;
+  }
+  h1 em{font-style:italic;color:var(--gold);}
+  .lede{
+    color:var(--muted);font-size:15px;max-width:64ch;margin:0;
+  }
+  .lede strong{color:var(--ink);font-weight:600;}
+  .src{
+    margin-top:16px;font-size:12.5px;color:var(--muted-dim);
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  /* ---------- Ticker bar ---------- */
+  .tickerbar{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;
+    background:var(--panel);border:1px solid var(--border);
+    border-radius:14px;padding:16px;margin:22px 0 8px;
+  }
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);font-family:'JetBrains Mono','Pretendard',monospace;
+  }
+  .field input{
+    background:var(--bg);border:1px solid var(--border);border-radius:9px;
+    color:var(--ink);padding:10px 12px;font-size:14px;font-family:inherit;
+    min-width:0;
+  }
+  .field.tick input{font-family:'JetBrains Mono','Pretendard',monospace;width:140px;letter-spacing:.03em;}
+  .field.name{flex:1;min-width:160px;}
+  .field input:focus{outline:none;border-color:var(--gold-dim);box-shadow:0 0 0 3px rgba(201,162,75,.12);}
+  .btns{display:flex;gap:8px;margin-left:auto;}
+  button{font-family:inherit;cursor:pointer;border-radius:9px;font-size:13px;transition:.15s;}
+  .btn{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--ink);
+    padding:10px 16px;font-weight:500;
+  }
+  .btn:hover{border-color:var(--gold-dim);color:var(--gold);}
+  .btn.primary{background:var(--gold);border-color:var(--gold);color:#15110A;font-weight:600;}
+  .btn.primary:hover{background:#D6B05E;color:#15110A;}
+  .btn.ghost:hover{border-color:var(--sell);color:var(--sell);}
+
+  .saved-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 2px 0;min-height:24px;}
+  .saved-row .lbl{font-size:11px;color:var(--muted-dim);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em;}
+  .chip{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:20px;
+    padding:4px 12px;font-size:12.5px;color:var(--muted);cursor:pointer;
+    font-family:'JetBrains Mono','Pretendard',monospace;
+  }
+  .chip:hover{border-color:var(--gold-dim);color:var(--gold);}
+  .chip{display:inline-flex;align-items:center;gap:7px;}
+  .chip-x{
+    font-family:system-ui,sans-serif;font-size:14px;line-height:1;color:var(--muted-dim);
+    width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;
+    border-radius:50%;margin-right:-4px;
+  }
+  .chip-x:hover{background:rgba(217,104,95,.18);color:var(--sell);}
+  .chip.cur{border-color:var(--gold);color:var(--gold);background:rgba(201,162,75,.1);}
+
+  /* ---------- Section heads ---------- */
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin:38px 0 4px;}
+  .sec-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold-dim);letter-spacing:.1em;}
+  .sec-title{font-family:'Newsreader',serif;font-size:22px;font-weight:500;margin:0;}
+  .sec-sub{color:var(--muted);font-size:13.5px;margin:2px 0 18px;}
+
+  /* ---------- Factor cards ---------- */
+  .factor{
+    background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;
+    padding:16px 18px;margin-bottom:10px;transition:border-color .15s;
+  }
+  .factor:hover{border-color:var(--border);}
+  .factor.rated{border-left:3px solid var(--gold-dim);}
+  .f-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .f-no{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted-dim);width:22px;flex:none;}
+  .f-name{font-weight:600;font-size:16px;}
+  .tag{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;
+    padding:3px 8px;border-radius:5px;text-transform:uppercase;flex:none;
+  }
+  .tag.std{background:rgba(201,162,75,.12);color:var(--gold);}
+  .tag.check{background:rgba(217,164,65,.14);color:var(--warn);}
+  .tag.signal{background:rgba(79,178,134,.12);color:var(--buy);}
+  .tag.source{background:rgba(232,230,224,.08);color:var(--ink);}
+  .f-rate{display:flex;gap:6px;margin-left:auto;flex:none;}
+  .pill{
+    background:var(--bg);border:1px solid var(--border);color:var(--muted);
+    padding:6px 11px;font-size:12.5px;font-family:'JetBrains Mono',monospace;
+    border-radius:7px;
+  }
+  .pill:hover{border-color:var(--muted);color:var(--ink);}
+  .pill.on{color:#15110A;font-weight:700;border-color:transparent;}
+  .pill.on[data-v="2"]{background:var(--buy);}
+  .pill.on[data-v="1"]{background:var(--gold);}
+  .pill.on[data-v="0"]{background:var(--sell);}
+  .pill.on[data-v="x"]{background:var(--muted-dim);color:var(--ink);}
+  .f-desc{color:var(--muted);font-size:13px;margin:11px 0 0;padding-left:34px;}
+  .f-note{
+    margin-top:10px;margin-left:34px;width:calc(100% - 34px);
+    background:var(--bg);border:1px solid var(--border-soft);border-radius:8px;
+    color:var(--ink);padding:8px 11px;font-size:13px;font-family:inherit;resize:vertical;min-height:34px;
+  }
+  .f-note:focus{outline:none;border-color:var(--gold-dim);}
+  .f-note::placeholder{color:var(--muted-dim);}
+  .risk-line{
+    display:flex;align-items:center;gap:9px;margin:10px 0 0 34px;
+    font-size:12.5px;color:var(--muted);
+  }
+  .risk-line input{accent-color:var(--sell);width:15px;height:15px;cursor:pointer;}
+  .risk-line.on{color:var(--sell);}
+
+  /* ---------- Verdict ---------- */
+  .verdict-wrap{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    padding:22px;margin-top:14px;box-shadow:var(--shadow);
+  }
+  .score-row{display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-bottom:20px;}
+  .score-box{flex:1;min-width:150px;}
+  .score-box .k{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .score-box .v{font-family:'Newsreader',serif;font-size:34px;line-height:1.1;margin-top:4px;}
+  .bar{height:7px;background:var(--bg);border-radius:4px;margin-top:9px;overflow:hidden;border:1px solid var(--border-soft);}
+  .bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));transition:width .4s ease;border-radius:4px;}
+  .band{font-size:13px;font-family:'JetBrains Mono',monospace;margin-top:6px;}
+
+  .mkt-select{display:flex;gap:8px;margin-top:4px;}
+  .mkt-select .pill{flex:1;text-align:center;}
+  .mkt-select .pill.on[data-m="under"]{background:var(--buy);color:#0E1116;font-weight:700;border-color:transparent;}
+  .mkt-select .pill.on[data-m="fair"]{background:var(--muted);color:#0E1116;font-weight:700;border-color:transparent;}
+  .mkt-select .pill.on[data-m="over"]{background:var(--sell);color:#0E1116;font-weight:700;border-color:transparent;}
+
+  /* matrix */
+  .matrix{margin-top:24px;}
+  .matrix-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:6px;margin-top:10px;}
+  .mh{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:center;padding:6px 4px;letter-spacing:.04em;}
+  .mh.row{writing-mode:initial;display:flex;align-items:center;justify-content:flex-end;text-align:right;padding-right:10px;}
+  .cell{
+    background:var(--panel-2);border:1px solid var(--border-soft);border-radius:9px;
+    padding:12px 8px;text-align:center;font-size:12.5px;color:var(--muted);
+    min-height:58px;display:flex;flex-direction:column;justify-content:center;gap:3px;
+    transition:.25s;
+  }
+  .cell .ct{font-weight:600;font-size:13px;color:var(--ink);}
+  .cell.active{transform:scale(1.03);box-shadow:0 0 0 2px rgba(201,162,75,.5),0 6px 20px rgba(0,0,0,.4);z-index:2;}
+  .cell.active.buy{background:rgba(79,178,134,.16);border-color:var(--buy);}
+  .cell.active.buy .ct{color:var(--buy);}
+  .cell.active.sell{background:rgba(217,104,95,.16);border-color:var(--sell);}
+  .cell.active.sell .ct{color:var(--sell);}
+  .cell.active.hold{background:rgba(201,162,75,.14);border-color:var(--gold);}
+  .cell.active.hold .ct{color:var(--gold);}
+
+  .verdict-headline{
+    margin-top:22px;padding:16px 18px;border-radius:12px;border:1px solid var(--border);
+    background:var(--bg);
+  }
+  .verdict-headline .vk{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+  .verdict-headline .vv{font-family:'Newsreader',serif;font-size:26px;margin:6px 0 4px;}
+  .verdict-headline .vd{font-size:13.5px;color:var(--muted);}
+  .vv.buy{color:var(--buy);} .vv.sell{color:var(--sell);} .vv.hold{color:var(--gold);} .vv.neutral{color:var(--ink);}
+
+  .principle{
+    margin-top:18px;font-size:13px;color:var(--muted);font-style:italic;
+    border-left:2px solid var(--gold-dim);padding-left:14px;font-family:'Newsreader',serif;
+  }
+
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);font-size:12px;color:var(--muted-dim);}
+  footer code{font-family:'JetBrains Mono',monospace;color:var(--muted);}
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--gold);color:#15110A;font-weight:600;font-size:13.5px;
+    padding:10px 20px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;z-index:50;
+    box-shadow:var(--shadow);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media(max-width:620px){
+    .f-rate{margin-left:0;width:100%;}
+    .f-rate .pill{flex:1;text-align:center;}
+    .matrix-grid{grid-template-columns:1fr;}
+    .mh.row{justify-content:flex-start;text-align:left;padding:8px 0 2px;}
+    .mh.col{display:none;}
+    .cell{min-height:auto;}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Valuation Lab · 03</p>
+    <h1>기업 프리미엄 평가 <em>체크리스트</em></h1>
+    <p class="lede">
+      어떤 사업이 높은 멀티플을 받을 자격이 있는지 11개 요소로 점검하고,
+      <strong>그 자격과 시장이 현재 주고 있는 프리미엄 사이의 간극</strong>에서 매수·매도 신호를 읽는다.
+    </p>
+    <p class="src">SOURCE · 《거인의 어깨 2권》 — 기업 프리미엄 장</p>
+  </header>
+
+  <!-- Ticker bar -->
+  <div class="tickerbar">
+    <div class="field tick">
+      <label for="tk">종목코드 / 티커</label>
+      <input id="tk" placeholder="005930 · AAPL" autocomplete="off" />
+    </div>
+    <div class="field name">
+      <label for="nm">기업명 / 메모</label>
+      <input id="nm" placeholder="기업명 또는 한 줄 코멘트" autocomplete="off" />
+    </div>
+    <div class="btns">
+      <button class="btn primary" id="saveBtn">저장</button>
+      <button class="btn ghost" id="clearBtn">초기화</button>
+    </div>
+  </div>
+  <div class="saved-row" id="savedRow"><span class="lbl">저장됨</span></div>
+
+  <!-- Factors -->
+  <div class="sec-head">
+    <span class="sec-num">I.</span>
+    <h2 class="sec-title">프리미엄 자격 — 11개 요소</h2>
+  </div>
+  <p class="sec-sub">각 요소가 이 기업에 얼마나 강하게 적용되는지 평가. <strong style="color:var(--warn)">검증필요</strong> 태그는 시장이 자주 착각해 과도한 프리미엄을 주는 항목.</p>
+  <div id="factors"></div>
+
+  <!-- Verdict -->
+  <div class="sec-head">
+    <span class="sec-num">II.</span>
+    <h2 class="sec-title">종합 판단</h2>
+  </div>
+  <p class="sec-sub">기업의 실질 프리미엄 자격 × 시장이 현재 주는 프리미엄.</p>
+
+  <div class="verdict-wrap">
+    <div class="score-row">
+      <div class="score-box">
+        <div class="k">실질 프리미엄 자격</div>
+        <div class="v" id="scoreVal">—</div>
+        <div class="bar"><span id="scoreBar" style="width:0%"></span></div>
+        <div class="band" id="scoreBand" style="color:var(--muted)">평가 전</div>
+      </div>
+      <div class="score-box">
+        <div class="k">시장이 현재 주는 프리미엄</div>
+        <div class="mkt-select" id="mktSelect">
+          <button class="pill" data-m="under">저평가</button>
+          <button class="pill" data-m="fair">적정</button>
+          <button class="pill" data-m="over">고평가</button>
+        </div>
+        <input class="f-note" id="mktNote" style="margin-left:0;width:100%;margin-top:10px" placeholder="현재 PER / PBR, 역사적 밴드·동종업계 대비 위치 메모" />
+      </div>
+    </div>
+
+    <!-- Matrix -->
+    <div class="matrix">
+      <div class="matrix-grid" id="matrix"></div>
+    </div>
+
+    <div class="verdict-headline">
+      <div class="vk">Verdict</div>
+      <div class="vv neutral" id="verdictText">자격 평가와 시장 프리미엄을 모두 입력하세요</div>
+      <div class="vd" id="verdictDesc">11개 요소를 평가하고, 시장이 주는 프리미엄 위치를 선택하면 판단이 갱신됩니다.</div>
+    </div>
+
+    <p class="principle">
+      “프리미엄을 받아야 하는데 못 받고 있다면 좋은 매수 기회가 되고,
+      받지 말아야 하는데 받고 있다면 매도 기회로 삼을 수 있다.” — 《거인의 어깨 2권》
+    </p>
+  </div>
+
+  <footer>
+    종목별 평가는 브라우저에 자동 저장됩니다 (<code>localStorage</code>) · GitHub Pages 배포용 단일 파일<br>
+    출처 표기는 《거인의 어깨 2권》 기준입니다. 저자·판본 등 정확한 서지정보는 직접 확인 후 보완하세요.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FACTORS = [
+  {id:'repeat',no:'01',name:'반복구매',tag:'std',tagText:'정통',
+   desc:'한번 산 고객이 주기적으로 다시 사는가. 소모품·화장품·음식료, 특히 구독모델이 최강. 의류는 브랜드가 있어도 충성도가 낮아 예외.'},
+  {id:'scale',no:'02',name:'확장성',tag:'std',tagText:'정통',
+   desc:'같은 제품이 글로벌로 쉽게 퍼지는가. 화장품은 SNS로 트렌드 전파 용이, 의류·음식은 체형·입맛 장벽으로 확장 난항.'},
+  {id:'productivity',no:'03',name:'생산성 향상',tag:'std',tagText:'정통',
+   desc:'자원 증가 없이 이익이 폭증하는 레버리지(규모의 경제). 자산운용·플랫폼은 O, 앱 외주개발은 X.'},
+  {id:'cost',no:'04',name:'원가절감능력',tag:'signal',tagText:'저평가단서',
+   desc:'시장은 평소 잘 안 주지만, 원자재·환율 급등으로 동종업계가 도매급 하락할 때 홀로 선방 → 위기 시 매수 기회 신호.'},
+  {id:'lockin',no:'05',name:'락인 (Lock-in)',tag:'std',tagText:'정통',
+   desc:'네트워크 효과·배타적 소모품(면도날·토너)·전환비용(금융·통신)·팬덤으로 고객을 묶어두는가.'},
+  {id:'predict',no:'06',name:'예측 가능성',tag:'std',tagText:'정통',
+   desc:'사업 변동성이 낮은가. 연예·게임 등 흥행산업은 파이프라인이 다변화되기 전까진 프리미엄 정당화 어려움.'},
+  {id:'cycle',no:'07',name:'사이클',tag:'check',tagText:'검증필요',
+   desc:"고점에서 '구조적 성장·사이클 축소'로 디스카운트 불필요하다는 논리는 대개 착각. (D램 진폭은 줄었어도 PBR 진폭은 거의 안 줄어듦)"},
+  {id:'hypergrowth',no:'08',name:'산업의 고성장',tag:'check',tagText:'검증필요',
+   desc:'고성장만으로 주는 프리미엄은 허상인 경우 多(경쟁 격화, 우위 유지 난항). 성숙기 규모·점유율·이익률을 추정해 할인하는 터미널 스테이지 밸류로 접근.'},
+  {id:'pricing',no:'09',name:'가격결정력',tag:'check',tagText:'검증필요',
+   desc:'원하는 만큼 가격을 올릴 수 있는가. 과도하면 저항(넷플릭스 2022 유저 감소). 규제업종(음식료·전력)은 가격결정력 제한 또는 제로.'},
+  {id:'offbs',no:'10',name:'부외자산',tag:'std',tagText:'정통',pairRisk:'장부 밖 부외부채(예: 건설사 PF 보증)가 의심되는가 — 급락 도화선',
+   desc:'장부에 안 잡히지만 실질가치가 큰 자산(대형 기획사의 팬덤·브랜드·입지). 반대편의 부외부채는 별도 체크.'},
+  {id:'mgmt',no:'11',name:'훌륭한 경영진',tag:'source',tagText:'원천',
+   desc:'위 모든 프리미엄의 원천. 같은 자원으로 가치를 극대화할 수도 0으로 만들 수도 있음. 가치평가의 최종 귀결점.'},
+];
+
+const RATES = [
+  {v:'2',label:'강'},
+  {v:'1',label:'중'},
+  {v:'0',label:'약·없음'},
+  {v:'x',label:'해당없음'},
+];
+
+const KEY_PREFIX = 'premiumLab:v1:';
+
+/* Storage shim: use localStorage when available, fall back to in-memory
+   (e.g. inside the sandboxed preview iframe where browser storage is blocked). */
+const store = (()=>{
+  const mem = {};
+  let ok = false;
+  try{ const t='__pl_test'; localStorage.setItem(t,'1'); localStorage.removeItem(t); ok=true; }catch(e){ ok=false; }
+  return {
+    persistent: ok,
+    set(k,v){ if(ok){ try{ localStorage.setItem(k,v); return; }catch(e){} } mem[k]=v; },
+    get(k){ if(ok){ try{ const r=localStorage.getItem(k); if(r!==null) return r; }catch(e){} } return (k in mem)?mem[k]:null; },
+    remove(k){ if(ok){ try{ localStorage.removeItem(k); }catch(e){} } delete mem[k]; },
+    keys(){ let out=[]; if(ok){ try{ out=Object.keys(localStorage); }catch(e){} } for(const k in mem){ if(!out.includes(k)) out.push(k); } return out; },
+  };
+})();
+
+let state = blankState();
+
+function blankState(){
+  return {ticker:'',name:'',ratings:{},notes:{},risk:{},market:null,marketNote:''};
+}
+
+/* ---------- Render factors ---------- */
+const factorsEl = document.getElementById('factors');
+function renderFactors(){
+  factorsEl.innerHTML = '';
+  FACTORS.forEach(f=>{
+    const rated = state.ratings[f.id] !== undefined;
+    const card = document.createElement('div');
+    card.className = 'factor' + (rated && state.ratings[f.id]!=='x' ? ' rated':'');
+    card.innerHTML = `
+      <div class="f-top">
+        <span class="f-no">${f.no}</span>
+        <span class="f-name">${f.name}</span>
+        <span class="tag ${f.tag}">${f.tagText}</span>
+        <div class="f-rate" data-fid="${f.id}">
+          ${RATES.map(r=>`<button class="pill ${state.ratings[f.id]===r.v?'on':''}" data-v="${r.v}">${r.label}</button>`).join('')}
+        </div>
+      </div>
+      <p class="f-desc">${f.desc}</p>
+      ${f.pairRisk?`<label class="risk-line ${state.risk[f.id]?'on':''}"><input type="checkbox" data-risk="${f.id}" ${state.risk[f.id]?'checked':''}/> ⚠ ${f.pairRisk}</label>`:''}
+      <textarea class="f-note" data-note="${f.id}" placeholder="근거 메모 (선택)">${state.notes[f.id]||''}</textarea>
+    `;
+    factorsEl.appendChild(card);
+  });
+  bindFactorEvents();
+  recompute();
+}
+
+function bindFactorEvents(){
+  document.querySelectorAll('.f-rate').forEach(group=>{
+    const fid = group.dataset.fid;
+    group.querySelectorAll('.pill').forEach(p=>{
+      p.onclick = ()=>{
+        const v = p.dataset.v;
+        if(state.ratings[fid]===v){ delete state.ratings[fid]; }
+        else { state.ratings[fid]=v; }
+        renderFactors(); autosave();
+      };
+    });
+  });
+  document.querySelectorAll('[data-note]').forEach(t=>{
+    t.oninput = ()=>{ state.notes[t.dataset.note]=t.value; autosave(); };
+  });
+  document.querySelectorAll('[data-risk]').forEach(c=>{
+    c.onchange = ()=>{ state.risk[c.dataset.risk]=c.checked; renderFactors(); autosave(); };
+  });
+}
+
+/* ---------- Market premium selector ---------- */
+document.querySelectorAll('#mktSelect .pill').forEach(p=>{
+  p.onclick = ()=>{
+    const m = p.dataset.m;
+    state.market = (state.market===m)?null:m;
+    syncMarket(); recompute(); autosave();
+  };
+});
+document.getElementById('mktNote').oninput = (e)=>{ state.marketNote=e.target.value; autosave(); };
+function syncMarket(){
+  document.querySelectorAll('#mktSelect .pill').forEach(p=>{
+    p.classList.toggle('on', state.market===p.dataset.m);
+  });
+  document.getElementById('mktNote').value = state.marketNote||'';
+}
+
+/* ---------- Scoring ---------- */
+function scoreData(){
+  let got=0,max=0,counted=0;
+  FACTORS.forEach(f=>{
+    const v = state.ratings[f.id];
+    if(v===undefined||v==='x') return;
+    got += Number(v); max += 2; counted++;
+  });
+  const pct = max>0 ? Math.round(got/max*100) : null;
+  let band='low';
+  if(pct!==null){ band = pct>=60?'high' : pct>=35?'mid':'low'; }
+  return {pct,band,counted};
+}
+
+/* ---------- Verdict matrix ---------- */
+// rows: high/mid/low premium quality  ·  cols: under/fair/over market
+const MATRIX = {
+  high:{ under:{t:'강력 매수 후보',k:'buy',d:'받아야 할 프리미엄을 시장이 안 줌'},
+         fair:{t:'보유',k:'hold',d:'적정 평가 — 할인율만큼의 수익 기대'},
+         over:{t:'점검',k:'hold',d:'이미 반영, 추가 상승 여력 제한적'} },
+  mid: { under:{t:'매수 검토',k:'buy',d:'일부 자격 대비 저평가'},
+         fair:{t:'중립',k:'neutral',d:'특별한 비대칭 없음'},
+         over:{t:'비중 축소',k:'sell',d:'자격 대비 다소 비쌈'} },
+  low: { under:{t:'가치함정 주의',k:'neutral',d:'싼 데에는 이유가 있을 수 있음'},
+         fair:{t:'회피·관망',k:'neutral',d:'프리미엄 줄 근거 약함'},
+         over:{t:'매도 후보',k:'sell',d:'받지 말아야 할 프리미엄을 시장이 줌'} },
+};
+const ROWS=[['high','자격 높음'],['mid','자격 중간'],['low','자격 낮음']];
+const COLS=[['under','시장 저평가'],['fair','적정'],['over','고평가']];
+
+const matrixEl = document.getElementById('matrix');
+function renderMatrix(){
+  const {band} = scoreData();
+  const active = !!state.market;
+  let html = `<div class="mh col"></div>` + COLS.map(c=>`<div class="mh col">${c[1]}</div>`).join('');
+  ROWS.forEach(r=>{
+    html += `<div class="mh row">${r[1]}</div>`;
+    COLS.forEach(c=>{
+      const cell = MATRIX[r[0]][c[0]];
+      const isActive = active && band===r[0] && state.market===c[0] && scoreData().pct!==null;
+      html += `<div class="cell ${isActive?'active '+cell.k:''}"><span class="ct">${cell.t}</span></div>`;
+    });
+  });
+  matrixEl.innerHTML = html;
+}
+
+/* ---------- Recompute all ---------- */
+function recompute(){
+  const {pct,band,counted} = scoreData();
+  const bandLabel = {high:'프리미엄 자격 높음',mid:'자격 중간',low:'자격 낮음'};
+  document.getElementById('scoreVal').textContent = pct===null?'—':pct+'%';
+  document.getElementById('scoreBar').style.width = (pct||0)+'%';
+  const bandEl = document.getElementById('scoreBand');
+  if(pct===null){ bandEl.textContent='평가 전'; bandEl.style.color='var(--muted)'; }
+  else {
+    bandEl.textContent = bandLabel[band] + `  ·  ${counted}개 항목 반영`;
+    bandEl.style.color = band==='high'?'var(--buy)':band==='low'?'var(--sell)':'var(--gold)';
+  }
+  renderMatrix();
+
+  const vt = document.getElementById('verdictText');
+  const vd = document.getElementById('verdictDesc');
+  if(pct===null || !state.market){
+    vt.className='vv neutral';
+    vt.textContent='자격 평가와 시장 프리미엄을 모두 입력하세요';
+    vd.textContent='11개 요소 중 하나 이상을 평가하고, 시장이 주는 프리미엄 위치를 선택하면 판단이 갱신됩니다.';
+    return;
+  }
+  const cell = MATRIX[band][state.market];
+  vt.className='vv '+cell.k;
+  vt.textContent = cell.t;
+  vd.textContent = cell.d;
+}
+
+/* ---------- Persistence ---------- */
+const LAST_KEY = 'premiumLab:lastTicker';
+
+function autosave(){
+  state.ticker = document.getElementById('tk').value.trim().toUpperCase();
+  state.name = document.getElementById('nm').value.trim();
+  if(!state.ticker){ renderSaved(); return; }
+  store.set(KEY_PREFIX+state.ticker, JSON.stringify({...state, savedAt:Date.now()}));
+  store.set(LAST_KEY, state.ticker);
+  renderSaved();
+}
+function saveExplicit(){
+  state.ticker = document.getElementById('tk').value.trim().toUpperCase();
+  if(!state.ticker){ toast('종목코드 / 티커를 먼저 입력하세요'); return; }
+  autosave(); toast('저장됨 · '+state.ticker);
+}
+function loadTicker(tk, silent){
+  const raw = store.get(KEY_PREFIX+tk);
+  if(!raw) return;
+  try{
+    const d = JSON.parse(raw);
+    state = {...blankState(), ...d};
+    document.getElementById('tk').value = state.ticker||'';
+    document.getElementById('nm').value = state.name||'';
+    store.set(LAST_KEY, tk);
+    syncMarket(); renderFactors();
+    if(!silent) toast('불러옴 · '+tk);
+  }catch(e){}
+}
+function deleteTicker(tk){
+  store.remove(KEY_PREFIX+tk);
+  if(store.get(LAST_KEY)===tk) store.remove(LAST_KEY);
+  if(state.ticker===tk) clearForm();
+  else renderSaved();
+  toast('삭제됨 · '+tk);
+}
+function clearForm(){
+  state = blankState();
+  document.getElementById('tk').value='';
+  document.getElementById('nm').value='';
+  store.remove(LAST_KEY);
+  syncMarket(); renderFactors(); renderSaved();
+}
+function renderSaved(){
+  const row = document.getElementById('savedRow');
+  const keys = store.keys().filter(k=>k.startsWith(KEY_PREFIX)).map(k=>k.slice(KEY_PREFIX.length)).sort();
+  const note = store.persistent ? '' : ` <span class="lbl" style="color:var(--warn)">· 미리보기는 세션 한정 (호스팅 시 영구저장)</span>`;
+  row.innerHTML = `<span class="lbl">저장됨</span>` + note +
+    (keys.length
+      ? keys.map(k=>`<span class="chip ${k===state.ticker?'cur':''}" data-load="${k}">${k}<span class="chip-x" data-del="${k}" role="button" aria-label="삭제">×</span></span>`).join('')
+      : `<span class="lbl" style="color:var(--muted-dim)">아직 없음</span>`);
+  row.querySelectorAll('[data-load]').forEach(c=> c.onclick=(e)=>{
+    if(e.target.dataset.del!==undefined) return;
+    loadTicker(c.dataset.load);
+  });
+  row.querySelectorAll('[data-del]').forEach(x=> x.onclick=(e)=>{
+    e.stopPropagation();
+    deleteTicker(x.dataset.del);
+  });
+}
+
+document.getElementById('tk').oninput = autosave;
+document.getElementById('nm').oninput = autosave;
+document.getElementById('saveBtn').onclick = saveExplicit;
+document.getElementById('clearBtn').onclick = clearForm;
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),1700);
+}
+
+/* ---------- Init ---------- */
+renderFactors();
+renderSaved();
+const last = store.get(LAST_KEY);
+if(last && store.get(KEY_PREFIX+last)){ loadTicker(last, true); }
+</script>
+</body>
+</html>
