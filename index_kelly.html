@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>켈리 포트폴리오 배분기</title>
+<style>
+  :root {
+    --bg:#0c0e12; --panel:#15181f; --panel-2:#1b1f28; --line:#262b35;
+    --ink:#e9e7e2; --dim:#8a8f9a; --faint:#5a5f6a;
+    --accent:#00d4a0; --accent-dim:#0a3d33; --warn:#e8b04a; --bad:#e86a6a; --good:#5fd39a;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo",sans-serif;
+    padding:16px 14px 60px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:560px;margin:0 auto;}
+  header{margin-bottom:16px;}
+  h1{font-size:17px;margin:0 0 3px;font-weight:700;letter-spacing:-0.3px;}
+  .tagline{font-size:11.5px;color:var(--dim);line-height:1.5;}
+  .tagline b{color:var(--accent);font-weight:600;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;}
+  .card h2{font-size:13px;margin:0 0 10px;color:var(--accent);font-weight:600;}
+
+  /* input row for adding a stock */
+  .add-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:7px;align-items:end;}
+  .fld{display:flex;flex-direction:column;gap:4px;}
+  .fld label{font-size:10px;color:var(--faint);}
+  .fld input{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:8px;padding:8px 8px;font-size:13px;font-family:var(--mono);width:100%;}
+  .fld input.txt{font-family:inherit;}
+  .prob-row{display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .prob-row label{font-size:11.5px;color:var(--dim);white-space:nowrap;}
+  .prob-row input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:3px;background:var(--line);outline:none;}
+  .prob-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #0c0e12;}
+  .prob-val{font-family:var(--mono);font-size:13px;color:var(--accent);min-width:78px;text-align:right;}
+  .btn{border:none;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:600;cursor:pointer;}
+  .btn.primary{background:var(--accent);color:#04140f;width:100%;margin-top:12px;}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
+  .btn.sm{padding:4px 8px;font-size:11px;}
+  .kelly-preview{font-size:11px;color:var(--dim);margin-top:8px;text-align:center;font-family:var(--mono);}
+
+  /* holdings table */
+  .hold{border-top:1px solid var(--line);padding:11px 0;}
+  .hold:first-of-type{border-top:none;}
+  .hold-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .hold-name{font-size:13.5px;font-weight:600;}
+  .hold-detail{font-size:10.5px;color:var(--faint);font-family:var(--mono);margin-top:2px;}
+  .hold-right{display:flex;align-items:center;gap:8px;}
+  .hold-alloc{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent);}
+  .hold-alloc.zero{color:var(--faint);}
+  .alloc-bar{height:6px;border-radius:4px;background:var(--panel-2);margin-top:8px;overflow:hidden;}
+  .alloc-fill{height:100%;background:linear-gradient(90deg,var(--accent-dim),var(--accent));border-radius:4px;transition:width .3s;}
+  .hold-kelly{font-size:10.5px;color:var(--dim);font-family:var(--mono);}
+  .hold-kelly.neg{color:var(--bad);}
+  .empty{color:var(--faint);font-size:12px;text-align:center;padding:14px 0;}
+
+  /* summary */
+  .summary{display:flex;gap:8px;margin-bottom:14px;}
+  .sbox{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;}
+  .sbox .lbl{font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.4px;}
+  .sbox .val{font-family:var(--mono);font-size:19px;font-weight:700;margin-top:3px;}
+  .sbox .sub{font-size:9.5px;color:var(--dim);margin-top:1px;}
+
+  /* mode toggle */
+  .toggle{display:flex;gap:6px;margin-bottom:12px;}
+  .toggle button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--dim);
+    border-radius:9px;padding:8px;font-size:11.5px;font-weight:600;cursor:pointer;}
+  .toggle button.on{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+
+  .note{font-size:10.5px;color:var(--faint);line-height:1.7;margin-top:6px;}
+  .warnbox{background:#2a2410;border:1px solid #4d4317;border-radius:9px;padding:9px 11px;font-size:11px;color:var(--warn);margin-top:10px;line-height:1.5;}
+  .status{font-size:11px;color:var(--dim);text-align:center;min-height:15px;margin:8px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>켈리 포트폴리오 배분기</h1>
+  <div class="tagline">각 종목의 <b>풀 켈리 값</b>을 상대 매력도로 삼아, 양수 종목끼리 <b>100% 기준</b>으로 배분합니다. 승리 확률을 입력하면 패배 확률은 자동(1−p).</div>
+</header>
+
+<div class="card">
+  <h2>종목 추가</h2>
+  <div class="add-grid">
+    <div class="fld"><label>종목명</label><input class="txt" id="i-name" placeholder="예: 삼성전자"></div>
+    <div class="fld"><label>현재가</label><input id="i-price" inputmode="decimal" placeholder="10000"></div>
+    <div class="fld"><label>상승목표</label><input id="i-up" inputmode="decimal" placeholder="20000"></div>
+    <div class="fld"><label>하락목표</label><input id="i-down" inputmode="decimal" placeholder="3000"></div>
+  </div>
+  <div class="prob-row">
+    <label>승리 확률 p (%)</label>
+    <input type="number" id="i-prob" min="1" max="99" step="1" value="50" style="width:80px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px;font-size:13px;font-family:var(--mono);text-align:right;">
+    <span class="prob-val" id="prob-val">패배 50%</span>
+  </div>
+  <div class="kelly-preview" id="kelly-preview">현재가·목표가 입력 시 켈리 값 미리보기</div>
+  <button class="btn primary" id="addBtn">+ 포트폴리오에 추가</button>
+</div>
+
+<div class="summary">
+  <div class="sbox">
+    <div class="lbl">양수 종목</div>
+    <div class="val" id="s-count">0</div>
+    <div class="sub">배분 대상</div>
+  </div>
+  <div class="sbox">
+    <div class="lbl">켈리 합</div>
+    <div class="val" id="s-sum">0%</div>
+    <div class="sub">정규화 전</div>
+  </div>
+  <div class="sbox">
+    <div class="lbl" id="s-invest-lbl">권장 주식투입</div>
+    <div class="val" id="s-invest">0%</div>
+    <div class="sub" id="s-invest-sub">하프 켈리 기준</div>
+  </div>
+</div>
+
+<div class="toggle">
+  <button id="tg-full" class="on">상대 배분 (100% 정규화)</button>
+  <button id="tg-abs">절대 켈리 비중</button>
+</div>
+
+<div class="card">
+  <h2 id="list-title">포트폴리오 배분</h2>
+  <div id="holdings"><div class="empty">아직 추가된 종목이 없습니다.</div></div>
+  <div class="warnbox" id="warnbox" style="display:none"></div>
+</div>
+
+<div class="card">
+  <h2>포트폴리오 저장 · 불러오기</h2>
+  <div style="display:flex;gap:8px;">
+    <input class="txt" id="pf-name" placeholder="포트폴리오 이름 (예: 반도체 바스켓)" style="flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;">
+    <button class="btn ghost" id="pfSaveBtn" style="white-space:nowrap;">현재 구성 저장</button>
+  </div>
+  <div id="pfList" style="margin-top:10px;"></div>
+</div>
+
+<div class="status" id="status"></div>
+
+<div class="card">
+  <div class="note">
+    <b>계산식</b> · 켈리 f = p/a − q/b (a=하락손실률, b=상승이익률, 모두 현재가 기준)<br>
+    <b>상대 배분</b>: 음수 켈리(사면 안 되는 종목)는 0으로 제외하고, 양수 종목들의 켈리 값 비율대로 100%를 나눔.<br>
+    <b>절대 켈리 비중</b>: 각 종목의 켈리 값을 그대로 표시(정규화 안 함). 이 값들의 합이 곧 이론적 총 주식 투입 비중.<br>
+    <span style="color:var(--warn)">⚠️ 켈리는 확률·목표가가 정확하다고 가정합니다. 실제로는 추정치이므로 <b>하프 켈리 이하</b>를 권장합니다. 이 도구는 사고의 보조이지 매매 지시가 아닙니다.</span>
+  </div>
+</div>
+</div>
+
+<script>
+const KEY='kelly-portfolio';
+let holdings = [];      // {id,name,price,up,down,prob}
+let viewMode = 'rel';   // 'rel' or 'abs'
+
+const $ = id => document.getElementById(id);
+
+function kellyOf(h){
+  const b = (h.up - h.price)/h.price;    // 이익 비율
+  const a = (h.price - h.down)/h.price;  // 손실 비율
+  const p = h.prob, q = 1 - h.prob;
+  if (a <= 0) return { a, b, f: null, err:'하락목표가 현재가 이상' };
+  if (b <= 0) return { a, b, f: null, err:'상승목표가 현재가 이하' };
+  const f = p/a - q/b;
+  return { a:+a.toFixed(3), b:+b.toFixed(3), f };
+}
+
+function fmtPct(x, d=1){ return (x*100).toFixed(d)+'%'; }
+
+// live preview
+function readProb(){
+  let v = parseFloat($('i-prob').value);
+  if(isNaN(v)) return null;
+  v = Math.min(99, Math.max(1, v)); // 1~99% 제한
+  return v/100;
+}
+function updatePreview(){
+  const price=parseFloat($('i-price').value), up=parseFloat($('i-up').value), down=parseFloat($('i-down').value);
+  const prob=readProb();
+  if(prob===null){ $('prob-val').textContent='패배 —'; }
+  else { $('prob-val').textContent = '패배 '+Math.round((1-prob)*100)+'%'; }
+  if(isNaN(price)||isNaN(up)||isNaN(down)||prob===null){ $('kelly-preview').textContent='현재가·목표가 입력 시 켈리 값 미리보기'; return; }
+  const k = kellyOf({price,up,down,prob});
+  if(k.f===null){ $('kelly-preview').innerHTML='<span style="color:var(--bad)">'+k.err+'</span>'; return; }
+  const col = k.f>0 ? 'var(--good)' : 'var(--bad)';
+  $('kelly-preview').innerHTML = `이익폭 b=${k.b} · 손실폭 a=${k.a} · 켈리 f = <span style="color:${col}">${fmtPct(k.f)}</span>`;
+}
+
+['i-price','i-up','i-down','i-prob'].forEach(id=>$(id).addEventListener('input',updatePreview));
+
+$('addBtn').addEventListener('click', ()=>{
+  const name=$('i-name').value.trim();
+  const price=parseFloat($('i-price').value), up=parseFloat($('i-up').value), down=parseFloat($('i-down').value);
+  const prob=readProb();
+  if(!name){ setStatus('종목명을 입력하세요',true); return; }
+  if(isNaN(price)||isNaN(up)||isNaN(down)){ setStatus('현재가·목표가를 모두 입력하세요',true); return; }
+  if(prob===null){ setStatus('승리 확률을 입력하세요',true); return; }
+  if(price<=0){ setStatus('현재가는 0보다 커야 합니다',true); return; }
+  holdings.push({ id:Date.now().toString(36), name, price, up, down, prob });
+  save(); render();
+  // clear inputs (prob 유지)
+  $('i-name').value=''; $('i-price').value=''; $('i-up').value=''; $('i-down').value='';
+  updatePreview(); setStatus('추가됨: '+name);
+});
+
+$('tg-full').addEventListener('click',()=>{ viewMode='rel'; $('tg-full').classList.add('on'); $('tg-abs').classList.remove('on'); render(); });
+$('tg-abs').addEventListener('click',()=>{ viewMode='abs'; $('tg-abs').classList.add('on'); $('tg-full').classList.remove('on'); render(); });
+
+function render(){
+  const el = $('holdings');
+  if(!holdings.length){ el.innerHTML='<div class="empty">아직 추가된 종목이 없습니다.</div>';
+    $('s-count').textContent='0'; $('s-sum').textContent='0%'; $('s-invest').textContent='0%';
+    $('warnbox').style.display='none'; return; }
+
+  // compute kelly for all
+  const rows = holdings.map(h=>({ h, k:kellyOf(h) }));
+  const posSum = rows.reduce((s,r)=> s + (r.k.f && r.k.f>0 ? r.k.f : 0), 0);
+  const posCount = rows.filter(r=> r.k.f && r.k.f>0).length;
+  const maxAbs = Math.max(...rows.map(r=> r.k.f ? Math.abs(r.k.f):0), 0.0001);
+
+  // summary
+  $('s-count').textContent = posCount;
+  $('s-sum').textContent = fmtPct(posSum);
+  const halfKelly = Math.min(posSum/2, 1);
+  $('s-invest').textContent = fmtPct(halfKelly);
+
+  // rows
+  el.innerHTML = rows.map(r=>{
+    const {h,k} = r;
+    const invalid = k.f===null;
+    const neg = !invalid && k.f<=0;
+    let allocText, barW, allocCls='';
+    if(viewMode==='rel'){
+      const alloc = (!invalid && k.f>0 && posSum>0) ? k.f/posSum : 0;
+      allocText = fmtPct(alloc,1); barW = alloc*100;
+      if(alloc===0) allocCls='zero';
+    } else {
+      const alloc = (!invalid && k.f>0) ? k.f : 0;
+      allocText = fmtPct(alloc,1); barW = Math.min(alloc*100,100);
+      if(alloc===0) allocCls='zero';
+    }
+    const kellyStr = invalid ? k.err : fmtPct(k.f,1);
+    const kellyCls = (invalid||neg) ? 'neg' : '';
+    return `<div class="hold">
+      <div class="hold-top">
+        <div>
+          <div class="hold-name">${escapeHtml(h.name)}</div>
+          <div class="hold-detail">${fmtNum(h.price)} → ▲${fmtNum(h.up)} / ▼${fmtNum(h.down)} · p=${Math.round(h.prob*100)}%</div>
+          <div class="hold-kelly ${kellyCls}">켈리 f = ${kellyStr}${neg?' (제외)':''}${invalid?'':''}</div>
+        </div>
+        <div class="hold-right">
+          <div class="hold-alloc ${allocCls}">${allocText}</div>
+          <button class="btn ghost sm" data-del="${h.id}">✕</button>
+        </div>
+      </div>
+      <div class="alloc-bar"><div class="alloc-fill" style="width:${Math.max(barW,0)}%"></div></div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{
+    holdings = holdings.filter(x=>x.id!==b.dataset.del); save(); render();
+  }));
+
+  // warnings
+  const negCount = rows.filter(r=> r.k.f!==null && r.k.f<=0).length;
+  const invalidCount = rows.filter(r=> r.k.f===null).length;
+  let w=[];
+  if(negCount) w.push(`켈리가 음수인 종목 ${negCount}개는 배분에서 제외됐습니다(기대값이 마이너스 — 이 가격엔 매수 부적합).`);
+  if(invalidCount) w.push(`목표가 설정 오류인 종목 ${invalidCount}개가 있습니다.`);
+  if(posSum>1) w.push(`켈리 합이 ${fmtPct(posSum)}로 100%를 넘습니다. 절대 기준으로는 과도한 레버리지를 의미하니, 상대 배분(정규화)으로 보거나 하프 켈리를 쓰세요.`);
+  $('warnbox').style.display = w.length?'block':'none';
+  $('warnbox').innerHTML = w.join('<br>');
+
+  $('list-title').textContent = viewMode==='rel' ? '포트폴리오 배분 (100% 정규화)' : '절대 켈리 비중 (정규화 안 함)';
+  $('s-invest-sub').textContent = viewMode==='rel' ? '하프 켈리 기준' : '풀 켈리 합의 절반';
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtNum(n){ return n.toLocaleString('ko-KR'); }
+
+function setStatus(m,err){ const s=$('status'); s.textContent=m; s.style.color=err?'var(--bad)':'var(--dim)';
+  if(m) setTimeout(()=>{ if(s.textContent===m) s.textContent=''; },2500); }
+
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(holdings)); }catch(e){} }
+function load(){ try{ const r=localStorage.getItem(KEY); if(r) holdings=JSON.parse(r); }catch(e){ holdings=[]; } }
+
+// ---------- 저장된 포트폴리오 (이름별) ----------
+const PF_INDEX='kelly-pf-index';
+
+function loadPfIndex(){ try{ const r=localStorage.getItem(PF_INDEX); return r?JSON.parse(r):[]; }catch(e){ return []; } }
+function savePfIndex(l){ try{ localStorage.setItem(PF_INDEX, JSON.stringify(l)); }catch(e){} }
+
+function savePortfolio(){
+  const name=$('pf-name').value.trim();
+  if(!name){ setStatus('포트폴리오 이름을 입력하세요',true); return; }
+  if(!holdings.length){ setStatus('저장할 종목이 없습니다',true); return; }
+  const idx=loadPfIndex();
+  const existing=idx.find(p=>p.name===name);
+  const id = existing ? existing.id : Date.now().toString(36);
+  const date=new Date().toISOString().slice(0,10);
+  try{
+    localStorage.setItem('kelly-pf-'+id, JSON.stringify({ id, name, date, holdings }));
+    if(existing){ existing.date=date; existing.count=holdings.length; }
+    else idx.unshift({ id, name, date, count:holdings.length });
+    savePfIndex(idx);
+    setStatus((existing?'덮어쓰기':'저장')+' 완료: '+name);
+    $('pf-name').value='';
+    renderPfList();
+  }catch(e){ setStatus('저장 오류',true); }
+}
+
+function loadPortfolio(id){
+  try{
+    const r=localStorage.getItem('kelly-pf-'+id);
+    if(!r){ setStatus('불러오기 실패',true); return; }
+    const pf=JSON.parse(r);
+    holdings = pf.holdings.map(h=>({...h}));
+    save(); render();
+    setStatus(pf.name+' 불러옴 ('+pf.holdings.length+'종목)');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){ setStatus('불러오기 오류',true); }
+}
+
+function deletePortfolio(id){
+  try{
+    localStorage.removeItem('kelly-pf-'+id);
+    savePfIndex(loadPfIndex().filter(p=>p.id!==id));
+    renderPfList(); setStatus('삭제됨');
+  }catch(e){ setStatus('삭제 오류',true); }
+}
+
+function renderPfList(){
+  const el=$('pfList');
+  const idx=loadPfIndex();
+  if(!idx.length){ el.innerHTML='<div class="empty" style="padding:8px 0">저장된 포트폴리오가 없습니다.</div>'; return; }
+  el.innerHTML=idx.map(p=>`
+    <div class="hold" style="padding:9px 0;">
+      <div class="hold-top">
+        <div>
+          <div class="hold-name">${escapeHtml(p.name)}</div>
+          <div class="hold-detail">${p.count||0}종목 · ${p.date}</div>
+        </div>
+        <div class="hold-right">
+          <button class="btn ghost sm" data-pfload="${p.id}">불러오기</button>
+          <button class="btn ghost sm" data-pfdel="${p.id}">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+  el.querySelectorAll('[data-pfload]').forEach(b=>b.addEventListener('click',()=>loadPortfolio(b.dataset.pfload)));
+  el.querySelectorAll('[data-pfdel]').forEach(b=>b.addEventListener('click',()=>{
+    if(confirm('이 포트폴리오를 삭제할까요?')) deletePortfolio(b.dataset.pfdel);
+  }));
+}
+
+$('pfSaveBtn').addEventListener('click', savePortfolio);
+
+load(); render(); updatePreview(); renderPfList();
+</script>
+</body>
+</html>
