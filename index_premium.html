@@ -224,6 +224,142 @@
     border-left:2px solid var(--gold-dim);padding-left:14px;font-family:'Newsreader',serif;
   }
 
+  /* ---------- Traceability: diff badges ---------- */
+  .diff-badge{
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.03em;
+    padding:3px 8px;border-radius:5px;flex:none;font-weight:700;
+  }
+  .diff-badge.up{background:rgba(79,178,134,.14);color:var(--buy);}
+  .diff-badge.down{background:rgba(217,104,95,.18);color:var(--sell);}
+  .f-meta{
+    margin:8px 0 0 34px;font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--muted-dim);
+  }
+
+  .stale-chip{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;
+    padding:4px 10px;border-radius:20px;border:1px solid var(--warn);color:var(--warn);
+    background:rgba(217,164,65,.08);
+  }
+
+  /* ---------- Traceability: history timeline ---------- */
+  .hist-wrap{margin-top:14px;}
+  .hist-empty{
+    background:var(--panel);border:1px dashed var(--border);border-radius:12px;
+    padding:22px;text-align:center;color:var(--muted-dim);font-size:13px;
+  }
+  .hist-item{
+    background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;
+    padding:14px 16px;margin-bottom:8px;
+  }
+  .hist-item.latest{border-color:var(--gold-dim);}
+  .hist-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .hist-date{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink);font-weight:500;}
+  .hist-score{font-family:'JetBrains Mono',monospace;font-size:13px;}
+  .hist-score.high{color:var(--buy);} .hist-score.mid{color:var(--gold);} .hist-score.low{color:var(--sell);}
+  .hist-verdict{font-size:12.5px;color:var(--muted);margin-left:auto;font-family:'Newsreader',serif;font-style:italic;}
+  .hist-changes{margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;}
+  .hist-chg{
+    font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 9px;border-radius:5px;
+    background:var(--panel-2);border:1px solid var(--border-soft);color:var(--muted);
+  }
+  .hist-chg.down{color:var(--sell);border-color:rgba(217,104,95,.4);}
+  .hist-chg.up{color:var(--buy);border-color:rgba(79,178,134,.35);}
+  .hist-del{
+    margin-left:8px;color:var(--muted-dim);cursor:pointer;font-size:13px;
+    width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;
+  }
+  .hist-del:hover{background:rgba(217,104,95,.18);color:var(--sell);}
+
+  .io-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .io-row .btn{font-size:12px;padding:8px 13px;}
+
+  /* ---------- Fisher sub-checklist (factor 11) ---------- */
+  .gate-row{
+    margin:12px 0 0 34px;padding:12px 14px;border-radius:10px;
+    border:1px solid rgba(217,104,95,.45);background:rgba(217,104,95,.06);
+  }
+  .gate-row.pass{border-color:rgba(79,178,134,.45);background:rgba(79,178,134,.05);}
+  .gate-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .gate-name{font-weight:700;font-size:13.5px;color:var(--ink);}
+  .gate-fno{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--sell);}
+  .gate-btns{display:flex;gap:6px;margin-left:auto;}
+  .gate-btns .pill.on[data-gate="pass"]{background:var(--buy);color:#0E1116;font-weight:700;border-color:transparent;}
+  .gate-btns .pill.on[data-gate="fail"]{background:var(--sell);color:#0E1116;font-weight:700;border-color:transparent;}
+  .gate-desc{font-size:12px;color:var(--muted);margin:8px 0 0;}
+  .gate-quote{
+    font-family:'Newsreader',serif;font-style:italic;font-size:12px;color:var(--muted-dim);
+    margin:8px 0 0;border-left:2px solid var(--sell);padding-left:10px;
+  }
+  .sub-list{margin:10px 0 0 34px;border:1px solid var(--border-soft);border-radius:10px;overflow:hidden;}
+  .sub-row{
+    display:flex;align-items:center;gap:10px;padding:9px 12px;
+    border-bottom:1px solid var(--border-soft);background:var(--panel-2);flex-wrap:wrap;
+  }
+  .sub-row:last-child{border-bottom:none;}
+  .sub-fno{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--gold-dim);width:30px;flex:none;}
+  .sub-name{font-size:13px;color:var(--ink);}
+  .sub-rate{display:flex;gap:5px;margin-left:auto;}
+  .sub-rate .pill{padding:4px 9px;font-size:11.5px;}
+  .derived-badge{
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.03em;
+    padding:3px 8px;border-radius:5px;flex:none;font-weight:700;
+    background:rgba(201,162,75,.12);color:var(--gold);
+  }
+  .derived-badge.reject{background:rgba(217,104,95,.2);color:var(--sell);}
+  .reject-banner{
+    margin-top:14px;padding:14px 16px;border-radius:12px;
+    border:1px solid var(--sell);background:rgba(217,104,95,.1);
+    color:var(--sell);font-weight:600;font-size:14px;
+  }
+  @media(max-width:620px){
+    .sub-rate{margin-left:0;width:100%;}
+    .sub-rate .pill{flex:1;text-align:center;}
+    .gate-btns{margin-left:0;width:100%;}
+    .gate-btns .pill{flex:1;text-align:center;}
+  }
+
+  /* ---------- Judgment guides (collapsible) ---------- */
+  details.guide{margin:10px 0 0 34px;}
+  details.guide > summary{
+    cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:7px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;
+    color:var(--gold-dim);text-transform:uppercase;user-select:none;
+  }
+  details.guide > summary::-webkit-details-marker{display:none;}
+  details.guide > summary::before{content:'▸';transition:.15s;font-size:12px;}
+  details.guide[open] > summary::before{transform:rotate(90deg);}
+  details.guide > summary:hover{color:var(--gold);}
+  .guide-body{
+    margin-top:9px;background:var(--bg);border:1px solid var(--border-soft);
+    border-radius:9px;padding:12px 14px;font-size:12.5px;line-height:1.6;
+  }
+  .guide-q{color:var(--ink);font-weight:600;margin:0 0 9px;}
+  .guide-grade{display:flex;gap:9px;margin:5px 0;align-items:baseline;}
+  .guide-grade .gl{
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+    flex:none;width:26px;text-align:center;padding:2px 0;border-radius:4px;
+  }
+  .gl.g2{background:rgba(79,178,134,.15);color:var(--buy);}
+  .gl.g1{background:rgba(201,162,75,.15);color:var(--gold);}
+  .gl.g0{background:rgba(217,104,95,.15);color:var(--sell);}
+  .guide-grade .gt{color:var(--muted);}
+  .guide-trap{
+    margin:10px 0 0;padding-top:9px;border-top:1px dashed var(--border-soft);
+    color:var(--warn);font-size:12px;
+  }
+  .guide-trap::before{content:'⚠ 함정 · ';font-family:'JetBrains Mono',monospace;font-size:10.5px;}
+  details.sub-guide{width:100%;margin-top:2px;}
+  details.sub-guide > summary{
+    cursor:pointer;list-style:none;font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;color:var(--muted-dim);user-select:none;
+  }
+  details.sub-guide > summary::-webkit-details-marker{display:none;}
+  details.sub-guide > summary:hover{color:var(--gold);}
+  .sub-guide-body{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:5px;padding:8px 10px;background:var(--bg);border-radius:7px;border:1px solid var(--border-soft);}
+  .sub-guide-body b.s2{color:var(--buy);font-family:'JetBrains Mono',monospace;font-size:10.5px;}
+  .sub-guide-body b.s0{color:var(--sell);font-family:'JetBrains Mono',monospace;font-size:10.5px;}
+
   footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);font-size:12px;color:var(--muted-dim);}
   footer code{font-family:'JetBrains Mono',monospace;color:var(--muted);}
   .toast{
@@ -269,11 +405,13 @@
       <input id="nm" placeholder="기업명 또는 한 줄 코멘트" autocomplete="off" />
     </div>
     <div class="btns">
+      <button class="btn" id="commitBtn">평가 확정</button>
       <button class="btn primary" id="saveBtn">저장</button>
       <button class="btn ghost" id="clearBtn">초기화</button>
     </div>
   </div>
   <div class="saved-row" id="savedRow"><span class="lbl">저장됨</span></div>
+  <div class="saved-row" id="staleRow"></div>
 
   <!-- Factors -->
   <div class="sec-head">
@@ -326,9 +464,26 @@
     </p>
   </div>
 
+  <!-- History -->
+  <div class="sec-head">
+    <span class="sec-num">III.</span>
+    <h2 class="sec-title">평가 이력</h2>
+  </div>
+  <p class="sec-sub">
+    ‘평가 확정’을 누르면 현재 평가가 이 종목의 이력으로 동결됩니다. 이후 평가에서
+    <strong style="color:var(--sell)">등급이 하락한 항목</strong>은 매도규율 점검 신호입니다 — 총점보다 변화 방향을 보세요.
+  </p>
+  <div class="hist-wrap" id="histWrap"></div>
+  <div class="io-row">
+    <button class="btn" id="exportBtn">전체 백업 (JSON)</button>
+    <button class="btn" id="importBtn">백업 불러오기</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" />
+  </div>
+
   <footer>
     종목별 평가는 브라우저에 자동 저장됩니다 (<code>localStorage</code>) · GitHub Pages 배포용 단일 파일<br>
-    출처 표기는 《거인의 어깨 2권》 기준입니다. 저자·판본 등 정확한 서지정보는 직접 확인 후 보완하세요.
+    출처 표기는 《거인의 어깨 2권》 기준입니다. 저자·판본 등 정확한 서지정보는 직접 확인 후 보완하세요.<br>
+    판단 가이드의 강/중/약 기준(anchor)과 함정 노트는 원문 요지를 실무 판정용으로 조작화한 <strong>운용 가이드</strong>이며, 원문 인용이 아닙니다.
   </footer>
 </div>
 
@@ -337,27 +492,106 @@
 <script>
 const FACTORS = [
   {id:'repeat',no:'01',name:'반복구매',tag:'std',tagText:'정통',
-   desc:'한번 산 고객이 주기적으로 다시 사는가. 소모품·화장품·음식료, 특히 구독모델이 최강. 의류는 브랜드가 있어도 충성도가 낮아 예외.'},
+   desc:'한번 산 고객이 주기적으로 다시 사는가. 소모품·화장품·음식료, 특히 구독모델이 최강. 의류는 브랜드가 있어도 충성도가 낮아 예외.',
+   g:{q:'매출이 신규 고객 획득이 아니라 기존 고객의 재구매에서 나오는가?',
+      s2:'구매 주기가 짧고 이탈률이 낮음 — 구독·소모품·필수재 (면도날, SaaS, 담배)',
+      s1:'재구매는 있으나 주기가 길거나 브랜드 전환이 쉬움 (내구재, 일부 식품)',
+      s0:'일회성·프로젝트성 매출, 매년 수주를 새로 따야 함 (건설, 조선, 수주산업)',
+      trap:'브랜드 인지도 ≠ 반복구매. 유명 의류 브랜드도 재구매 충성도는 낮다(원문 지적). 매출 중 재구매 비율을 실제로 확인할 것.'}},
   {id:'scale',no:'02',name:'확장성',tag:'std',tagText:'정통',
-   desc:'같은 제품이 글로벌로 쉽게 퍼지는가. 화장품은 SNS로 트렌드 전파 용이, 의류·음식은 체형·입맛 장벽으로 확장 난항.'},
+   desc:'같은 제품이 글로벌로 쉽게 퍼지는가. 화장품은 SNS로 트렌드 전파 용이, 의류·음식은 체형·입맛 장벽으로 확장 난항.',
+   g:{q:'같은 제품·시스템이 큰 변형 없이 새 지역·고객군에 그대로 팔리는가?',
+      s2:'국경을 넘어도 제품 수정이 거의 불필요 (소프트웨어, SNS로 전파되는 화장품)',
+      s1:'현지화 비용은 들지만 검증된 복제 공식이 있음 (프랜차이즈, 플랫폼 현지화)',
+      s0:'시장마다 사실상 재창업 — 체형·입맛·규제 장벽 (의류, 로컬 음식, 내수 규제업)',
+      trap:'해외 매출 비중이 아니라 확장의 한계비용을 보라. 해외 비중이 높아도 시장마다 새로 다 지어야 하면 확장성이 아니다.'}},
   {id:'productivity',no:'03',name:'생산성 향상',tag:'std',tagText:'정통',
-   desc:'자원 증가 없이 이익이 폭증하는 레버리지(규모의 경제). 자산운용·플랫폼은 O, 앱 외주개발은 X.'},
+   desc:'자원 증가 없이 이익이 폭증하는 레버리지(규모의 경제). 자산운용·플랫폼은 O, 앱 외주개발은 X.',
+   g:{q:'매출이 2배가 될 때 비용도 2배로 늘어야 하는가?',
+      s2:'한계비용 ≈ 0, 이익이 매출보다 빠르게 증가 (플랫폼, 운용자산 늘어나는 자산운용)',
+      s1:'규모의 경제는 있으나 성장에 CAPEX·인력이 동반됨 (대형 제조)',
+      s0:'매출 = 인력 × 단가 구조, 사람을 늘려야만 성장 (외주개발, 컨설팅, 인력파견)',
+      trap:'영업이익률이 높다고 레버리지가 있는 게 아니다. 증분 이익률(매출 증가분 대비 이익 증가분)이 평균 이익률보다 높은지를 볼 것.'}},
   {id:'cost',no:'04',name:'원가절감능력',tag:'signal',tagText:'저평가단서',
-   desc:'시장은 평소 잘 안 주지만, 원자재·환율 급등으로 동종업계가 도매급 하락할 때 홀로 선방 → 위기 시 매수 기회 신호.'},
+   desc:'시장은 평소 잘 안 주지만, 원자재·환율 급등으로 동종업계가 도매급 하락할 때 홀로 선방 → 위기 시 매수 기회 신호.',
+   g:{q:'원가 쇼크 국면에서 경쟁사 대비 마진 방어가 되는가?',
+      s2:'과거 원가 급등기에 업계에서 거의 유일하게 마진을 지킨 이력이 있음',
+      s1:'업계 평균 수준의 원가 구조 — 쇼크를 같이 맞음',
+      s0:'원가 전가 불가 + 고정비 비중 높음 — 쇼크에 가장 먼저 적자',
+      trap:'이 항목은 평시에 시장이 프리미엄을 안 준다(원문). 그래서 위기 국면에서 동종업계가 도매급 하락할 때 진짜 원가경쟁력 기업을 줍는 단서로 쓰는 것. 지금 판정은 과거 위기 국면 실적으로 검증할 것.'}},
   {id:'lockin',no:'05',name:'락인 (Lock-in)',tag:'std',tagText:'정통',
-   desc:'네트워크 효과·배타적 소모품(면도날·토너)·전환비용(금융·통신)·팬덤으로 고객을 묶어두는가.'},
+   desc:'네트워크 효과·배타적 소모품(면도날·토너)·전환비용(금융·통신)·팬덤으로 고객을 묶어두는가.',
+   g:{q:'고객이 떠나려면 무엇을 포기해야 하는가?',
+      s2:'전환 시 데이터·네트워크·호환성 손실이 큼 (OS 생태계, 기간계 시스템, 강한 팬덤)',
+      s1:'습관·약정 수준의 마찰만 존재 (통신 약정, 일반 구독)',
+      s0:'클릭 한 번에 대체 가능 — 이탈 비용 사실상 없음',
+      trap:'높은 재구매율이 락인처럼 보일 수 있다. 구분법: 경쟁사가 반값을 제시했을 때도 남을 이유가 있는가? 없다면 락인이 아니라 관성이다.'}},
   {id:'predict',no:'06',name:'예측 가능성',tag:'std',tagText:'정통',
-   desc:'사업 변동성이 낮은가. 연예·게임 등 흥행산업은 파이프라인이 다변화되기 전까진 프리미엄 정당화 어려움.'},
-  {id:'cycle',no:'07',name:'사이클',tag:'check',tagText:'검증필요',
-   desc:"고점에서 '구조적 성장·사이클 축소'로 디스카운트 불필요하다는 논리는 대개 착각. (D램 진폭은 줄었어도 PBR 진폭은 거의 안 줄어듦)"},
+   desc:'사업 변동성이 낮은가. 연예·게임 등 흥행산업은 파이프라인이 다변화되기 전까진 프리미엄 정당화 어려움.',
+   g:{q:'이 회사의 3년 뒤 매출을 어느 정도 오차로 말할 수 있는가?',
+      s2:'계약·구독 기반 잔존 매출(backlog)로 가시성이 높음 — 오차 ±10% 이내 수준',
+      s1:'수요는 안정적이나 가격·환율 변수로 이익 변동 존재',
+      s0:'흥행·수주 하나에 실적이 좌우됨 (게임 신작, 엔터, 바이오 임상)',
+      trap:'과거 실적이 안정적이었다는 것과 구조적으로 예측 가능하다는 것은 다르다. 안정의 원인이 계약 구조인지, 그냥 운이 좋았던 구간인지 구분할 것.'}},
+  {id:'cycle',no:'07',name:'사이클 내성',tag:'check',tagText:'검증필요',
+   desc:"이익이 경기·업황 사이클에 얼마나 휘둘리는가. '강'은 사이클이 세다는 뜻이 아니라 사이클에 강하다(내성이 높다)는 뜻.",
+   g:{q:'불황이 와도 이익이 유지되는가, 아니면 흑자↔적자를 오가는가?',
+      s2:'내성 높음 — 불황에도 이익이 크게 안 꺾임 (필수소비재, 유틸리티성 사업)',
+      s1:'사이클은 타지만 진폭이 완만하거나 완충장치 존재 (장기계약, 제품믹스 다변화)',
+      s0:'내성 없음 — 전형적 딥사이클, 이익이 흑자↔적자를 오감 (메모리, 해운, 화학, 건설)',
+      trap:"사이클 고점에서 '구조적 성장으로 사이클이 사라졌다'는 논리가 나오면 대부분 착각(원문). D램 이익 진폭은 줄었어도 PBR 진폭은 거의 안 줄었다. 고점에서 이 항목을 상향 조정하고 싶어지는 것 자체가 경고 신호다."}},
   {id:'hypergrowth',no:'08',name:'산업의 고성장',tag:'check',tagText:'검증필요',
-   desc:'고성장만으로 주는 프리미엄은 허상인 경우 多(경쟁 격화, 우위 유지 난항). 성숙기 규모·점유율·이익률을 추정해 할인하는 터미널 스테이지 밸류로 접근.'},
+   desc:'고성장만으로 주는 프리미엄은 허상인 경우 多(경쟁 격화, 우위 유지 난항). 성숙기 규모·점유율·이익률을 추정해 할인하는 터미널 스테이지 밸류로 접근.',
+   g:{q:'산업의 성장이 이 회사 주주의 이익으로 연결되는 구조인가?',
+      s2:'고성장 + 진입장벽으로 성장 과실을 독점 (승자독식 구조 확립)',
+      s1:'산업은 크게 성장하나 경쟁 격화로 이익률이 압박됨',
+      s0:'성장이 전부 경쟁과 CAPEX로 소진됨 (항공산업의 역사가 전형)',
+      trap:'산업 성장률에 프리미엄을 주지 말 것(원문). 성숙기의 시장 규모 × 예상 점유율 × 정상 이익률로 터미널 밸류를 계산하고 현재로 할인해서 판단하라.'}},
   {id:'pricing',no:'09',name:'가격결정력',tag:'check',tagText:'검증필요',
-   desc:'원하는 만큼 가격을 올릴 수 있는가. 과도하면 저항(넷플릭스 2022 유저 감소). 규제업종(음식료·전력)은 가격결정력 제한 또는 제로.'},
+   desc:'원하는 만큼 가격을 올릴 수 있는가. 과도하면 저항(넷플릭스 2022 유저 감소). 규제업종(음식료·전력)은 가격결정력 제한 또는 제로.',
+   g:{q:'가격을 10% 올렸을 때 고객 이탈이 이익 증가를 상쇄하는가?',
+      s2:'인상해도 수요가 유지된 실제 이력 존재 (명품, 대체재 없는 특허의약품)',
+      s1:'인플레이션 전가는 가능하나 실질 인상은 제한적',
+      s0:'가격은 시장이 정함 — price taker (커머디티, 가격 규제업종)',
+      trap:"가격 인상 발표와 가격결정력은 다르다. 인상 후 물량이 유지됐는지(P×Q 동반 확인)까지 봐야 한다. 원가 상승분 전가는 가격결정력이 아니라 생존이다."}},
   {id:'offbs',no:'10',name:'부외자산',tag:'std',tagText:'정통',pairRisk:'장부 밖 부외부채(예: 건설사 PF 보증)가 의심되는가 — 급락 도화선',
-   desc:'장부에 안 잡히지만 실질가치가 큰 자산(대형 기획사의 팬덤·브랜드·입지). 반대편의 부외부채는 별도 체크.'},
+   desc:'장부에 안 잡히지만 실질가치가 큰 자산(대형 기획사의 팬덤·브랜드·입지). 반대편의 부외부채는 별도 체크.',
+   g:{q:'재무제표에 계상되지 않은 실질 가치(또는 숨은 부채)가 있는가?',
+      s2:'장부 대비 명백한 미계상 자산 — 화폐화 경로도 보임 (콘텐츠 IP, 알짜 부동산, 강한 팬덤)',
+      s1:'무형의 가치는 있으나 화폐화 경로가 불확실함',
+      s0:'미계상 자산 없음 — 또는 부외부채 의심 시 아래 리스크 체크',
+      trap:'부외자산은 매수 논거가 되지만 부외부채는 급락 도화선이다(PF 보증, 우발채무, 소송충당 미반영). 자산만 세고 부채를 안 세는 편향을 경계할 것.'}},
   {id:'mgmt',no:'11',name:'훌륭한 경영진',tag:'source',tagText:'원천',
-   desc:'위 모든 프리미엄의 원천. 같은 자원으로 가치를 극대화할 수도 0으로 만들 수도 있음. 가치평가의 최종 귀결점.'},
+   desc:'위 모든 프리미엄의 원천. 등급은 아래 필립 피셔 서브 체크리스트에서 자동 도출됨 — 평균이 아니라 최약 고리(weakest link)가 상한을 정한다. F15 정직성은 점수 항목이 아닌 탈락 게이트.',
+   g:{q:'이 경영진에게 내 돈을 10년 맡길 수 있는가?',
+      s2:'서브 항목 대부분 강 + 약점 없음 — 자동판정이 산출',
+      s1:'전반적으로 양호하나 약점이 하나라도 있으면 강 불가 (약점 캡)',
+      s0:'서브 평균이 낮거나 게이트 탈락',
+      trap:'경영진 평가는 IR 자료가 아니라 행동 이력으로 한다. 말(비전 발표)이 아니라 지난 5년의 자본배분 결정(증자·자사주·M&A·배당)이 증거다.'}},
+];
+
+/* ---------- Fisher management sub-checklist ---------- */
+const MGMT_GATE = {
+  id:'g15', fno:'F15', name:'경영진 정직성 · Integrity',
+  desc:'경영진의 주주에 대한 수탁자 의식(trusteeship)에 심각한 의문이 있는가. 승계·자기거래·소액주주 이익 침해 이력 등.',
+  quote:'"다른 모든 항목에서 아무리 높은 평가를 받아도, 경영진의 수탁자 의식에 심각한 의문이 있다면 결코 투자를 고려해선 안 된다." — 필립 피셔, Common Stocks and Uncommon Profits, 3장 15번',
+  guide:'탈락 판정 예시: 지배주주-소액주주 이해가 충돌하는 거래(불리한 합병비율, 일감 몰아주기), 회계 신뢰 훼손 이력, 주주 상대 반복적 말바꾸기. 핵심은 유죄 확정이 아니라 "심각한 의문"이다 — 피셔 기준으로는 의문만으로 제외가 원칙. 법적 무죄와 게이트 통과는 별개 판단.',
+};
+const MGMT_SUB = [
+  {id:'s02',fno:'F02',name:'차기 성장동력 개발 의지',
+   guide:'<b class="s2">강</b> 현 주력의 성장 소진 이후를 겨냥한 로드맵 + 실제 R&D·CAPEX 집행이 따라옴 · <b class="s0">약</b> 현금창출원 우려먹기, 신사업은 발표만 반복'},
+  {id:'s07',fno:'F07',name:'노사 관계',
+   guide:'<b class="s2">강</b> 낮은 이직률, 장기 무분규, 처우 관련 소송 부재 · <b class="s0">약</b> 파업·노사소송 반복, 핵심 인력 유출 지속'},
+  {id:'s08',fno:'F08',name:'임원 간 관계',
+   guide:'<b class="s2">강</b> 임원 장기 근속, 승계·역할 분담이 안정적 · <b class="s0">약</b> 핵심 임원 잦은 교체, 파벌·내분 보도 반복'},
+  {id:'s09',fno:'F09',name:'경영진 층(depth)',
+   guide:'<b class="s2">강</b> 내부 육성된 후계·중간관리 층이 두터움, 특정 1인 의존 없음 · <b class="s0">약</b> 창업자·오너 원맨 체제, 유고 시 공백 명확'},
+  {id:'s12',fno:'F12',name:'이익에 대한 장기 시야',
+   guide:'<b class="s2">강</b> 단기 마진 훼손을 감수한 장기 투자 이력 존재 · <b class="s0">약</b> 분기 실적 방어를 위해 R&D·품질 비용을 삭감한 이력'},
+  {id:'s13',fno:'F13',name:'증자·희석 회피',
+   guide:'<b class="s2">강</b> 내부 현금으로 성장 조달, 자사주 소각으로 주식 수 감소 · <b class="s0">약</b> 유상증자·CB 반복으로 기존 주주 지분이 계속 희석'},
+  {id:'s14',fno:'F14',name:'악재 시 솔직한 소통',
+   guide:'<b class="s2">강</b> 악재를 선제적·구체적으로 공시하고 대응책을 제시 · <b class="s0">약</b> 문제 축소·부인 후 뒤늦게 인정하는 패턴'},
 ];
 
 const RATES = [
@@ -368,6 +602,8 @@ const RATES = [
 ];
 
 const KEY_PREFIX = 'premiumLab:v1:';
+const HIST_PREFIX = 'premiumLab:hist:';
+const STALE_DAYS = 180;
 
 /* Storage shim: use localStorage when available, fall back to in-memory
    (e.g. inside the sandboxed preview iframe where browser storage is blocked). */
@@ -387,27 +623,160 @@ const store = (()=>{
 let state = blankState();
 
 function blankState(){
-  return {ticker:'',name:'',ratings:{},notes:{},risk:{},market:null,marketNote:''};
+  return {ticker:'',name:'',ratings:{},notes:{},risk:{},market:null,marketNote:'',ratedAt:{},mgmtSub:{},gate:null};
 }
+
+/* ---------- Derived grade for factor 11 (weakest-link) ---------- */
+function mgmtDerived(){
+  if(state.gate==='fail') return {v:'0', reject:true, n:MGMT_SUB.length};
+  const vals = MGMT_SUB.map(s=>gradeNum((state.mgmtSub||{})[s.id])).filter(v=>v!==null);
+  if(!vals.length) return {v:undefined, n:0};
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  let g = avg>=1.5 ? 2 : avg>=0.75 ? 1 : 0;
+  if(vals.includes(0) && g===2) g=1;   /* weakest link: 약점 존재 시 '강' 불가 */
+  return {v:String(g), n:vals.length, capped:vals.includes(0)&&avg>=1.5};
+}
+
+/* ---------- History helpers ---------- */
+function getHist(tk){
+  if(!tk) return [];
+  try{ return JSON.parse(store.get(HIST_PREFIX+tk)||'[]'); }catch(e){ return []; }
+}
+function setHist(tk, arr){ store.set(HIST_PREFIX+tk, JSON.stringify(arr.slice(-40))); }
+function lastSnap(tk){ const h=getHist(tk); return h.length?h[h.length-1]:null; }
+function fmtDate(ts){ const d=new Date(ts); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
+function gradeNum(v){ return (v===undefined||v==='x')?null:Number(v); }
+const GRADE_LABEL = {2:'강',1:'중',0:'약'};
+
+function currentVerdict(){
+  if(state.gate==='fail') return 'REJECT · 정직성 게이트 탈락';
+  const {pct,band}=scoreData();
+  if(pct===null||!state.market) return null;
+  return MATRIX[band][state.market].t;
+}
+
+/* diff of current working state vs last committed snapshot */
+function factorDelta(fid){
+  const snap = lastSnap(state.ticker);
+  if(!snap) return null;
+  const p = gradeNum(snap.ratings[fid]), c = gradeNum(effRating(fid));
+  if(p===null || c===null || p===c) return null;
+  return {dir: c>p?'up':'down', prev:p, cur:c};
+}
+/* diff between two snapshots (for timeline) */
+function snapDiff(prev, cur){
+  const out=[];
+  /* gate transition first — highest-priority signal */
+  const pg = prev ? (prev.gate||null) : null;
+  const cg = cur.gate||null;
+  if(prev && pg!==cg){
+    const lbl = {pass:'통과',fail:'탈락',null:'미검증'};
+    out.push({name:'F15 게이트', dir: cg==='fail'?'down':(pg==='fail'?'up':'down'), gate:true,
+              txt:(lbl[pg]||'미검증')+'→'+(lbl[cg]||'미검증')});
+  }
+  FACTORS.forEach(f=>{
+    const p = prev?gradeNum(prev.ratings[f.id]):null;
+    const c = gradeNum(cur.ratings[f.id]);
+    if(p===null||c===null||p===c) return;
+    out.push({name:f.name, dir:c>p?'up':'down', p, c});
+  });
+  return out;
+}
+
+/* effective rating: factor 11 is derived, others manual */
+function effRating(fid){
+  if(fid==='mgmt') return mgmtDerived().v;
+  return state.ratings[fid];
+}
+
+/* keep guide panels open across re-renders */
+const openGuides = new Set();
 
 /* ---------- Render factors ---------- */
 const factorsEl = document.getElementById('factors');
 function renderFactors(){
   factorsEl.innerHTML = '';
   FACTORS.forEach(f=>{
-    const rated = state.ratings[f.id] !== undefined;
+    const isMgmt = f.id==='mgmt';
+    const curVal = effRating(f.id);
+    const rated = curVal !== undefined;
+    const delta = factorDelta(f.id);
+    const deltaHtml = delta
+      ? `<span class="diff-badge ${delta.dir}">${delta.dir==='down'?'▼':'▲'} 전회 ${GRADE_LABEL[delta.prev]}</span>`
+      : '';
+    const ratedTs = state.ratedAt && state.ratedAt[f.id];
+    const metaHtml = (rated && ratedTs && !isMgmt) ? `<div class="f-meta">평가일 ${fmtDate(ratedTs)}</div>` : '';
     const card = document.createElement('div');
-    card.className = 'factor' + (rated && state.ratings[f.id]!=='x' ? ' rated':'');
+    card.className = 'factor' + (rated && curVal!=='x' ? ' rated':'');
+
+    let rateHtml;
+    if(isMgmt){
+      const d = mgmtDerived();
+      rateHtml = d.reject
+        ? `<span class="derived-badge reject">게이트 탈락 · REJECT</span>`
+        : d.v===undefined
+          ? `<span class="derived-badge" style="opacity:.55">서브 미평가</span>`
+          : `<span class="derived-badge">자동판정 ${GRADE_LABEL[d.v]} · 서브 ${d.n}/${MGMT_SUB.length}${d.capped?' · 약점 캡':''}</span>`;
+    } else {
+      rateHtml = `<div class="f-rate" data-fid="${f.id}">
+          ${RATES.map(r=>`<button class="pill ${state.ratings[f.id]===r.v?'on':''}" data-v="${r.v}">${r.label}</button>`).join('')}
+        </div>`;
+    }
+
+    const guideHtml = f.g ? `
+      <details class="guide" data-g="${f.id}" ${openGuides.has(f.id)?'open':''}>
+        <summary>판단 가이드</summary>
+        <div class="guide-body">
+          <p class="guide-q">${f.g.q}</p>
+          <div class="guide-grade"><span class="gl g2">강</span><span class="gt">${f.g.s2}</span></div>
+          <div class="guide-grade"><span class="gl g1">중</span><span class="gt">${f.g.s1}</span></div>
+          <div class="guide-grade"><span class="gl g0">약</span><span class="gt">${f.g.s0}</span></div>
+          ${f.g.trap?`<p class="guide-trap">${f.g.trap}</p>`:''}
+        </div>
+      </details>` : '';
+
+    const gateOn = state.gate;
+    const mgmtHtml = isMgmt ? `
+      <div class="gate-row ${gateOn==='pass'?'pass':''}">
+        <div class="gate-head">
+          <span class="gate-fno">${MGMT_GATE.fno} · GATE</span>
+          <span class="gate-name">${MGMT_GATE.name}</span>
+          <div class="gate-btns">
+            <button class="pill ${gateOn==='pass'?'on':''}" data-gate="pass">통과</button>
+            <button class="pill ${gateOn==='fail'?'on':''}" data-gate="fail">탈락</button>
+          </div>
+        </div>
+        <p class="gate-desc">${MGMT_GATE.desc} <strong>미선택 = 미검증</strong> (통과가 아님).</p>
+        <details class="guide" style="margin-left:0" data-g="gate" ${openGuides.has('gate')?'open':''}>
+          <summary>판단 가이드</summary>
+          <div class="guide-body">${MGMT_GATE.guide}</div>
+        </details>
+        <p class="gate-quote">${MGMT_GATE.quote}</p>
+      </div>
+      <div class="sub-list">
+        ${MGMT_SUB.map(s=>`
+          <div class="sub-row">
+            <span class="sub-fno">${s.fno}</span>
+            <span class="sub-name">${s.name}</span>
+            <div class="sub-rate" data-sub="${s.id}">
+              ${RATES.map(r=>`<button class="pill ${(state.mgmtSub||{})[s.id]===r.v?'on':''}" data-v="${r.v}">${r.label}</button>`).join('')}
+            </div>
+            ${s.guide?`<details class="sub-guide" data-g="sub:${s.id}" ${openGuides.has('sub:'+s.id)?'open':''}><summary>▸ 판단 가이드</summary><div class="sub-guide-body">${s.guide}</div></details>`:''}
+          </div>`).join('')}
+      </div>` : '';
+
     card.innerHTML = `
       <div class="f-top">
         <span class="f-no">${f.no}</span>
         <span class="f-name">${f.name}</span>
         <span class="tag ${f.tag}">${f.tagText}</span>
-        <div class="f-rate" data-fid="${f.id}">
-          ${RATES.map(r=>`<button class="pill ${state.ratings[f.id]===r.v?'on':''}" data-v="${r.v}">${r.label}</button>`).join('')}
-        </div>
+        ${deltaHtml}
+        ${rateHtml}
       </div>
       <p class="f-desc">${f.desc}</p>
+      ${guideHtml}
+      ${metaHtml}
+      ${mgmtHtml}
       ${f.pairRisk?`<label class="risk-line ${state.risk[f.id]?'on':''}"><input type="checkbox" data-risk="${f.id}" ${state.risk[f.id]?'checked':''}/> ⚠ ${f.pairRisk}</label>`:''}
       <textarea class="f-note" data-note="${f.id}" placeholder="근거 메모 (선택)">${state.notes[f.id]||''}</textarea>
     `;
@@ -423,8 +792,9 @@ function bindFactorEvents(){
     group.querySelectorAll('.pill').forEach(p=>{
       p.onclick = ()=>{
         const v = p.dataset.v;
-        if(state.ratings[fid]===v){ delete state.ratings[fid]; }
-        else { state.ratings[fid]=v; }
+        if(!state.ratedAt) state.ratedAt = {};
+        if(state.ratings[fid]===v){ delete state.ratings[fid]; delete state.ratedAt[fid]; }
+        else { state.ratings[fid]=v; state.ratedAt[fid]=Date.now(); }
         renderFactors(); autosave();
       };
     });
@@ -434,6 +804,36 @@ function bindFactorEvents(){
   });
   document.querySelectorAll('[data-risk]').forEach(c=>{
     c.onchange = ()=>{ state.risk[c.dataset.risk]=c.checked; renderFactors(); autosave(); };
+  });
+  /* Fisher gate */
+  document.querySelectorAll('[data-gate]').forEach(b=>{
+    b.onclick = ()=>{
+      const g = b.dataset.gate;
+      state.gate = (state.gate===g)?null:g;
+      if(!state.ratedAt) state.ratedAt={};
+      state.ratedAt['mgmt']=Date.now();
+      renderFactors(); autosave();
+      if(state.gate==='fail') toast('정직성 게이트 탈락 — 총점 무효 (Fisher Veto)');
+    };
+  });
+  /* Fisher sub-items */
+  document.querySelectorAll('.sub-rate').forEach(group=>{
+    const sid = group.dataset.sub;
+    group.querySelectorAll('.pill').forEach(p=>{
+      p.onclick = ()=>{
+        const v = p.dataset.v;
+        if(!state.mgmtSub) state.mgmtSub={};
+        if(!state.ratedAt) state.ratedAt={};
+        if(state.mgmtSub[sid]===v){ delete state.mgmtSub[sid]; }
+        else { state.mgmtSub[sid]=v; }
+        state.ratedAt['mgmt']=Date.now();
+        renderFactors(); autosave();
+      };
+    });
+  });
+  /* guide open-state tracking */
+  document.querySelectorAll('details[data-g]').forEach(d=>{
+    d.ontoggle = ()=>{ const k=d.dataset.g; if(d.open) openGuides.add(k); else openGuides.delete(k); };
   });
 }
 
@@ -457,7 +857,7 @@ function syncMarket(){
 function scoreData(){
   let got=0,max=0,counted=0;
   FACTORS.forEach(f=>{
-    const v = state.ratings[f.id];
+    const v = effRating(f.id);
     if(v===undefined||v==='x') return;
     got += Number(v); max += 2; counted++;
   });
@@ -503,12 +903,31 @@ function renderMatrix(){
 function recompute(){
   const {pct,band,counted} = scoreData();
   const bandLabel = {high:'프리미엄 자격 높음',mid:'자격 중간',low:'자격 낮음'};
-  document.getElementById('scoreVal').textContent = pct===null?'—':pct+'%';
-  document.getElementById('scoreBar').style.width = (pct||0)+'%';
+  const gateFail = state.gate==='fail';
+  const scoreEl = document.getElementById('scoreVal');
   const bandEl = document.getElementById('scoreBand');
+
+  if(gateFail){
+    scoreEl.textContent = 'REJECT';
+    scoreEl.style.color = 'var(--sell)';
+    document.getElementById('scoreBar').style.width = '0%';
+    bandEl.textContent = 'F15 정직성 게이트 탈락 — 총점 무효';
+    bandEl.style.color = 'var(--sell)';
+    renderMatrix();
+    const vt = document.getElementById('verdictText');
+    const vd = document.getElementById('verdictDesc');
+    vt.className='vv sell';
+    vt.textContent='탈락 (Fisher Veto)';
+    vd.textContent='나머지 항목 점수와 무관하게 투자 대상에서 제외. 피셔: 정직성에 의문이 있으면 다른 14개 항목은 무의미하다.';
+    return;
+  }
+  scoreEl.style.color = '';
+  scoreEl.textContent = pct===null?'—':pct+'%';
+  document.getElementById('scoreBar').style.width = (pct||0)+'%';
   if(pct===null){ bandEl.textContent='평가 전'; bandEl.style.color='var(--muted)'; }
   else {
-    bandEl.textContent = bandLabel[band] + `  ·  ${counted}개 항목 반영`;
+    const gateWarn = state.gate!=='pass' ? '  ·  ⚠ 게이트 미검증' : '';
+    bandEl.textContent = bandLabel[band] + `  ·  ${counted}개 항목 반영` + gateWarn;
     bandEl.style.color = band==='high'?'var(--buy)':band==='low'?'var(--sell)':'var(--gold)';
   }
   renderMatrix();
@@ -518,13 +937,13 @@ function recompute(){
   if(pct===null || !state.market){
     vt.className='vv neutral';
     vt.textContent='자격 평가와 시장 프리미엄을 모두 입력하세요';
-    vd.textContent='11개 요소 중 하나 이상을 평가하고, 시장이 주는 프리미엄 위치를 선택하면 판단이 갱신됩니다.';
+    vd.textContent='11개 요소를 평가하고, 시장이 주는 프리미엄 위치를 선택하면 판단이 갱신됩니다.';
     return;
   }
   const cell = MATRIX[band][state.market];
   vt.className='vv '+cell.k;
   vt.textContent = cell.t;
-  vd.textContent = cell.d;
+  vd.textContent = cell.d + (state.gate!=='pass' ? '  ·  단, F15 정직성 게이트가 미검증 상태 — 검증 전 실행 금지.' : '');
 }
 
 /* ---------- Persistence ---------- */
@@ -552,7 +971,7 @@ function loadTicker(tk, silent){
     document.getElementById('tk').value = state.ticker||'';
     document.getElementById('nm').value = state.name||'';
     store.set(LAST_KEY, tk);
-    syncMarket(); renderFactors();
+    syncMarket(); renderFactors(); renderHistory(); renderStale();
     if(!silent) toast('불러옴 · '+tk);
   }catch(e){}
 }
@@ -568,7 +987,7 @@ function clearForm(){
   document.getElementById('tk').value='';
   document.getElementById('nm').value='';
   store.remove(LAST_KEY);
-  syncMarket(); renderFactors(); renderSaved();
+  syncMarket(); renderFactors(); renderSaved(); renderHistory(); renderStale();
 }
 function renderSaved(){
   const row = document.getElementById('savedRow');
@@ -588,10 +1007,130 @@ function renderSaved(){
   });
 }
 
-document.getElementById('tk').oninput = autosave;
+document.getElementById('tk').oninput = ()=>{ autosave(); renderFactors(); renderHistory(); renderStale(); };
 document.getElementById('nm').oninput = autosave;
 document.getElementById('saveBtn').onclick = saveExplicit;
 document.getElementById('clearBtn').onclick = clearForm;
+
+/* ---------- Commit (평가 확정) ---------- */
+function commitSnapshot(){
+  state.ticker = document.getElementById('tk').value.trim().toUpperCase();
+  if(!state.ticker){ toast('종목코드 / 티커를 먼저 입력하세요'); return; }
+  const {pct,band,counted} = scoreData();
+  if(pct===null){ toast('하나 이상의 항목을 평가한 뒤 확정하세요'); return; }
+  const prev = lastSnap(state.ticker);
+  const matRatings = {...state.ratings};
+  const dv = mgmtDerived().v;
+  if(dv!==undefined) matRatings.mgmt = dv; else delete matRatings.mgmt;
+  const snap = {
+    at: Date.now(),
+    ratings: matRatings,
+    mgmtSub: {...(state.mgmtSub||{})},
+    gate: state.gate,
+    notes: {...state.notes},
+    risk: {...state.risk},
+    market: state.market,
+    marketNote: state.marketNote,
+    score: {pct, band, counted},
+    verdict: currentVerdict(),
+  };
+  if(prev && JSON.stringify(prev.ratings)===JSON.stringify(snap.ratings)
+          && JSON.stringify(prev.mgmtSub||{})===JSON.stringify(snap.mgmtSub)
+          && (prev.gate||null)===(snap.gate||null)
+          && prev.market===snap.market){
+    toast('전회 확정과 동일 — 변경 없음');
+    return;
+  }
+  const h = getHist(state.ticker);
+  h.push(snap); setHist(state.ticker, h);
+  autosave();
+  renderFactors(); renderHistory(); renderStale();
+  toast('평가 확정 · '+state.ticker+' · '+h.length+'회차');
+}
+
+/* ---------- History timeline ---------- */
+function renderHistory(){
+  const el = document.getElementById('histWrap');
+  const tk = state.ticker;
+  const h = getHist(tk);
+  if(!tk || !h.length){
+    el.innerHTML = `<div class="hist-empty">${tk?'아직 확정된 평가가 없습니다 — ‘평가 확정’으로 첫 기록을 남기세요':'종목을 선택하면 평가 이력이 표시됩니다'}</div>`;
+    return;
+  }
+  let html='';
+  for(let i=h.length-1;i>=0;i--){
+    const s=h[i], prev=i>0?h[i-1]:null;
+    const diffs = snapDiff(prev, s);
+    const chg = prev
+      ? (diffs.length
+          ? diffs.map(d=> d.gate
+              ? `<span class="hist-chg ${d.dir}">⛔ ${d.name} ${d.txt}</span>`
+              : `<span class="hist-chg ${d.dir}">${d.dir==='down'?'▼':'▲'} ${d.name} ${GRADE_LABEL[d.p]}→${GRADE_LABEL[d.c]}</span>`).join('')
+          : `<span class="hist-chg">등급 변화 없음</span>`)
+      : `<span class="hist-chg">최초 평가${s.gate==='fail'?' · ⛔ 게이트 탈락':''}</span>`;
+    html += `
+      <div class="hist-item ${i===h.length-1?'latest':''}">
+        <div class="hist-top">
+          <span class="hist-date">${fmtDate(s.at)}</span>
+          <span class="hist-score ${s.score.band}">${s.score.pct}% · ${s.score.counted}항목</span>
+          <span class="hist-verdict">${s.verdict||'매트릭스 미완'}</span>
+          <span class="hist-del" data-hdel="${i}" role="button" aria-label="이력 삭제">×</span>
+        </div>
+        <div class="hist-changes">${chg}</div>
+      </div>`;
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('[data-hdel]').forEach(x=> x.onclick=()=>{
+    const idx = Number(x.dataset.hdel);
+    const arr = getHist(tk); arr.splice(idx,1); setHist(tk,arr);
+    renderFactors(); renderHistory(); renderStale();
+    toast('이력 삭제됨');
+  });
+}
+
+/* ---------- Staleness (재검증 필요) ---------- */
+function renderStale(){
+  const row = document.getElementById('staleRow');
+  const tk = state.ticker;
+  const s = tk ? lastSnap(tk) : null;
+  if(!s){ row.innerHTML=''; return; }
+  const days = Math.floor((Date.now()-s.at)/86400000);
+  row.innerHTML = days >= STALE_DAYS
+    ? `<span class="stale-chip">⚠ 재검증 필요 · 마지막 확정 D+${days}</span>`
+    : `<span class="lbl">마지막 확정 ${fmtDate(s.at)} · D+${days}</span>`;
+}
+
+/* ---------- Backup export / import ---------- */
+function exportAll(){
+  const data={};
+  store.keys().filter(k=>k.startsWith('premiumLab:')).forEach(k=>{ data[k]=store.get(k); });
+  const blob = new Blob([JSON.stringify({app:'premiumLab',exportedAt:Date.now(),data},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='valuationlab_premium_'+fmtDate(Date.now()).replaceAll('.','')+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('백업 파일 생성됨');
+}
+function importAll(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const obj=JSON.parse(r.result);
+      if(!obj||!obj.data) throw 0;
+      let n=0;
+      Object.entries(obj.data).forEach(([k,v])=>{
+        if(k.startsWith('premiumLab:')){ store.set(k,v); n++; }
+      });
+      renderSaved(); renderHistory(); renderStale(); renderFactors();
+      toast('복원 완료 · '+n+'개 항목');
+    }catch(e){ toast('파일 형식이 올바르지 않습니다'); }
+  };
+  r.readAsText(file);
+}
+document.getElementById('commitBtn').onclick = commitSnapshot;
+document.getElementById('exportBtn').onclick = exportAll;
+document.getElementById('importBtn').onclick = ()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = (e)=>{ if(e.target.files[0]) importAll(e.target.files[0]); e.target.value=''; };
 
 /* ---------- Toast ---------- */
 let toastTimer;
@@ -607,6 +1146,7 @@ renderFactors();
 renderSaved();
 const last = store.get(LAST_KEY);
 if(last && store.get(KEY_PREFIX+last)){ loadTicker(last, true); }
+renderHistory(); renderStale();
 </script>
 </body>
 </html>
