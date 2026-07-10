@@ -5,11 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ValuationLab — 투자 분석 도구</title>
 <style>
-  :root {
-    --bg: #0c0e12; --panel: #15181f; --panel-2: #1b1f28; --line: #262b35;
-    --ink: #e9e7e2; --dim: #8a8f9a; --faint: #5a5f6a;
-    --accent: #00d4a0; --gold: #d9a23b;
-    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  /* ===== VL BASE — 4개 도구 공통. 수정 시 전 파일 동기화 ===== */
+  :root{
+    --bg:#0c0e12; --panel:#15181f; --panel-2:#1b1f28; --line:#262b35;
+    --ink:#e9e7e2; --dim:#8a8f9a; --faint:#5a5f6a;
+    --warn:#e8b04a; --bad:#e86a6a; --good:#5fd39a;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+    /* ---- per-tool accent (민트 + 허브 골드) ---- */
+    --accent:#00d4a0; --accent-dim:#0a3d33; --gold:#d9a23b;
   }
   * { box-sizing: border-box; }
   body {

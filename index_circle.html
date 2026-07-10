@@ -5,55 +5,74 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>능력범위 체크리스트 (검증판)</title>
 <style>
-  * { box-sizing: border-box; }
+  /* ===== VL BASE — 4개 도구 공통. 수정 시 전 파일 동기화 ===== */
+  :root{
+    --bg:#0c0e12; --panel:#15181f; --panel-2:#1b1f28; --line:#262b35;
+    --ink:#e9e7e2; --dim:#8a8f9a; --faint:#5a5f6a;
+    --warn:#e8b04a; --bad:#e86a6a; --good:#5fd39a;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+    /* ---- per-tool accent (골드) ---- */
+    --accent:#d9a23b; --accent-dim:#3a2c10; --accent-ink:#1a1300;
+  }
+  *{box-sizing:border-box;}
+  .vl-home-btn{position:sticky;top:0;z-index:999;display:inline-flex;align-items:center;gap:7px;
+    margin:0 0 14px 0;padding:9px 15px;background:rgba(18,21,27,.85);border:1px solid var(--line);
+    border-radius:9px;color:var(--accent);font-size:13px;font-weight:600;text-decoration:none;
+    box-shadow:0 2px 10px rgba(0,0,0,.35);transition:background .13s,border-color .13s;
+    -webkit-tap-highlight-color:transparent;}
+  .vl-home-btn:hover{background:var(--accent-dim);border-color:var(--accent);}
+  .vl-home-btn:active{transform:scale(.97);}
+  .vl-home-btn .vl-home-ico{font-size:15px;line-height:1;}
+  /* ===== VL BASE END ===== */
+
   body {
-    margin: 0; background: #0f1115; color: #e8e6e1;
+    margin: 0; background: var(--bg); color: var(--ink);
     font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     padding: 18px 14px 60px; line-height: 1.5;
   }
   h1 { font-size: 18px; margin: 0 0 2px; font-weight: 700; letter-spacing: -0.2px; }
-  .sub { font-size: 12px; color: #9a9690; margin-bottom: 8px; }
-  .legend { font-size: 10.5px; color: #6a6862; margin: 4px 0 16px; line-height: 1.7; }
+  .sub { font-size: 12px; color: var(--dim); margin-bottom: 8px; }
+  .legend { font-size: 10.5px; color: var(--faint); margin: 4px 0 16px; line-height: 1.7; }
   .topbar { display: flex; gap: 8px; margin-bottom: 14px; }
   .topbar input {
-    flex: 1; background: #16181d; border: 1px solid #2a2e36; color: #e8e6e1;
+    flex: 1; background: var(--panel); border: 1px solid var(--line); color: var(--ink);
     border-radius: 10px; padding: 9px 10px; font-size: 13px;
   }
   .btn {
-    background: #2a2e36; color: #e8e6e1; border: none;
+    background: var(--line); color: var(--ink); border: none;
     border-radius: 10px; padding: 9px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer;
   }
-  .btn.primary { background: #d9a23b; color: #1a1300; }
-  .btn.ghost { background: transparent; border: 1px solid #2a2e36; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); }
   .btn.small { padding: 5px 9px; font-size: 11px; }
   .card {
-    background: #16181d; border: 1px solid #262a32; border-radius: 14px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
     padding: 14px 14px 12px; margin-bottom: 12px;
   }
-  .card h2 { font-size: 13.5px; margin: 0 0 4px; color: #d9a23b; font-weight: 700; }
-  .card .desc { font-size: 11.5px; color: #8d8a85; margin-bottom: 10px; }
+  .card h2 { font-size: 13.5px; margin: 0 0 4px; color: var(--accent); font-weight: 700; }
+  .card .desc { font-size: 11.5px; color: var(--dim); margin-bottom: 10px; }
   label.row {
     display: flex; align-items: flex-start; gap: 9px;
     font-size: 13px; padding: 7px 0; border-top: 1px solid #1d2026; cursor: pointer;
   }
   label.row:first-of-type { border-top: none; }
   label.row input[type=checkbox] {
-    margin-top: 3px; width: 16px; height: 16px; accent-color: #d9a23b; flex-shrink: 0;
+    margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0;
   }
   textarea {
-    width: 100%; background: #11131a; border: 1px solid #262a32;
-    color: #e8e6e1; border-radius: 8px; padding: 8px 9px; font-size: 12.5px;
+    width: 100%; background: #11131a; border: 1px solid var(--line);
+    color: var(--ink); border-radius: 8px; padding: 8px 9px; font-size: 12.5px;
     margin-top: 6px; min-height: 46px; resize: vertical; font-family: inherit;
   }
-  textarea::placeholder { color: #5a5853; }
+  textarea::placeholder { color: var(--faint); }
   .tlabel { font-size: 12.5px; color: #c9c6c0; margin-top: 8px; display:block; }
   .item-text { display: block; }
   .src { display: block; font-size: 10px; color: #6a8caf; font-style: italic; margin-top: 2px; }
-  .src::before { content: "✓ "; color:#6fcf97; font-style:normal; }
+  .src::before { content: "✓ "; color:var(--good); font-style:normal; }
   .veto-note { display:block; font-size: 10px; color: #e8a23c; margin-top: 2px; }
   .result { text-align: center; padding: 6px 0 4px; }
-  .score { font-size: 38px; font-weight: 800; color: #d9a23b; line-height: 1; }
-  .score-label { font-size: 11.5px; color: #8d8a85; margin-top: 2px; }
+  .score { font-size: 38px; font-weight: 800; color: var(--accent); line-height: 1; }
+  .score-label { font-size: 11.5px; color: var(--dim); margin-top: 2px; }
   .verdict {
     margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px;
     font-weight: 600; text-align: left; line-height: 1.5;
@@ -66,23 +85,15 @@
   .saved-list { font-size: 12px; }
   .saved-item { display:flex; justify-content: space-between; align-items:center; padding: 8px 0; border-top: 1px solid #1d2026; }
   .saved-item:first-child { border-top: none; }
-  .saved-item .meta { color:#9a9690; font-size: 11px; }
+  .saved-item .meta { color:var(--dim); font-size: 11px; }
   .saved-item .actions { display:flex; gap:6px; }
   .badge { font-size: 10px; padding: 2px 7px; border-radius: 6px; }
   .badge.in { background:#16261d; color:#6fcf97; }
   .badge.border { background:#2a2410; color:#e8c23c; }
   .badge.out { background:#2a1616; color:#e87a7a; }
-  .empty { color:#6a6862; font-size: 12px; text-align:center; padding: 10px 0; }
-  .status { font-size:11px; color:#8d8a85; text-align:center; margin-top:6px; min-height:14px; }
-  .footnote { font-size:10.5px; color:#6a6862; line-height:1.7; margin-top:10px; }
-  .vl-home-btn{position:sticky;top:0;z-index:999;display:inline-flex;align-items:center;gap:7px;
-    margin:0 0 14px 0;padding:9px 15px;background:rgba(18,21,27,.85);border:1px solid var(--line);
-    border-radius:9px;color:var(--accent);font-size:13px;font-weight:600;text-decoration:none;
-    box-shadow:0 2px 10px rgba(0,0,0,.35);transition:background .13s,border-color .13s;
-    -webkit-tap-highlight-color:transparent;}
-  .vl-home-btn:hover{background:var(--accent-dim);border-color:var(--accent);}
-  .vl-home-btn:active{transform:scale(.97);}
-  .vl-home-btn .vl-home-ico{font-size:15px;line-height:1;}
+  .empty { color:var(--faint); font-size: 12px; text-align:center; padding: 10px 0; }
+  .status { font-size:11px; color:var(--dim); text-align:center; margin-top:6px; min-height:14px; }
+  .footnote { font-size:10.5px; color:var(--faint); line-height:1.7; margin-top:10px; }
 </style>
 </head>
 <body>

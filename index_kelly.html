@@ -7,12 +7,15 @@
 <meta name="theme-color" content="#0c0e12">
 <title>켈리 · 분할매수 플래너</title>
 <style>
+  /* ===== VL BASE — 4개 도구 공통. 수정 시 전 파일 동기화 ===== */
   :root{
     --bg:#0c0e12; --panel:#15181f; --panel-2:#1b1f28; --line:#262b35;
     --ink:#e9e7e2; --dim:#8a8f9a; --faint:#5a5f6a;
-    --accent:#00d4a0; --accent-dim:#0a3d33; --warn:#e8b04a; --bad:#e86a6a; --good:#5fd39a;
-    --cash:#6a9fe8; --cash-dim:#16283f;
+    --warn:#e8b04a; --bad:#e86a6a; --good:#5fd39a;
     --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+    /* ---- per-tool accent (민트) ---- */
+    --accent:#00d4a0; --accent-dim:#0a3d33;
+    --cash:#6a9fe8; --cash-dim:#16283f;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);
