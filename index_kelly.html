@@ -601,6 +601,39 @@
     <button class="btn primary" id="rj-save">기각 등재</button>
   </div>
 </div>
+
+<!-- 3년 검증 모달 -->
+<div class="modal-bg" id="vfModal" style="display:none">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <span id="vf-title">3년 검증</span>
+      <span class="modal-x" id="vf-close">✕</span>
+    </div>
+    <div class="re-intro" id="vf-intro"></div>
+    <div class="fld" style="margin-top:12px;"><label>현재가 ($)</label>
+      <input id="vf-price" inputmode="decimal"></div>
+    <div class="fld" style="margin-top:10px;">
+      <label>판정</label>
+      <select id="vf-verdict" style="background:var(--panel-2);border:1px solid var(--line);
+        color:var(--ink);border-radius:8px;padding:9px;font-size:12.5px;">
+        <option value="right">기각이 옳았다</option>
+        <option value="wrong">기각이 틀렸다</option>
+        <option value="unclear">판단 보류</option>
+      </select>
+    </div>
+    <div class="fld" style="margin-top:10px;">
+      <label>메모</label>
+      <textarea id="vf-note" rows="2"
+        style="background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+        border-radius:8px;padding:10px;font-size:12.5px;font-family:inherit;resize:vertical;"></textarea>
+    </div>
+    <div class="keep-note" style="margin-top:10px;">
+      기각이 틀렸다면 <b>TOOL 03의 r·N 가정</b>을 재검토하세요.
+      요구수익률이나 moat 지속기간 추정이 실제와 어긋났다는 신호입니다.
+    </div>
+    <button class="btn primary" id="vf-save">검증 저장</button>
+  </div>
+</div>
 </div>
 
 <script>
@@ -1573,6 +1606,7 @@ function rejectCard(c, now){
   let vBadge, vAct='';
   if(c.verify){
     vBadge=`<span class="pl-badge done">✓ 검증 완료</span>`;
+    vAct=`<button class="btn ghost" data-plvf="${c.id}">검증 보기</button>`;
   } else if(left!==null && left<=0){
     vBadge=`<span class="pl-badge due">🔍 검증 필요</span>`;
     vAct=`<button class="btn ghost" data-plvf="${c.id}">검증</button>`;
@@ -1695,6 +1729,9 @@ function bindPipeline(){
   document.querySelectorAll('[data-pledit]').forEach(b=>b.addEventListener('click',()=>{
     openRejectModal(b.dataset.pledit);
   }));
+  document.querySelectorAll('[data-plvf]').forEach(b=>b.addEventListener('click',()=>{
+    openVerifyModal(b.dataset.plvf);
+  }));
 }
 
 let rjCtx={cid:null, name:'', holdingId:null, editing:false, forceReason:null};
@@ -1780,6 +1817,33 @@ $('rj-save').addEventListener('click', ()=>{
   save(); render();
   $('rjModal').style.display='none';
   setStatus((rjCtx.editing?'기각 기록 수정됨: ':'기각 등재됨: ')+c.name);
+});
+
+let vfCid=null;
+
+function openVerifyModal(cid){
+  const c=candidates.find(x=>x.id===cid); if(!c) return;
+  vfCid=cid;
+  $('vf-title').textContent=`${c.name} · 3년 검증`;
+  $('vf-intro').innerHTML=
+    `기각 시점 <b>${c.rejectedDate}</b> · $${fmtNum(c.rejectPrice)}<br>`+
+    `당시 트리거: ${escapeHtml(c.trigger||'—')}`;
+  $('vf-price').value=(c.verify&&c.verify.price!=null)?c.verify.price:'';
+  $('vf-verdict').value=(c.verify&&c.verify.verdict)||'right';
+  $('vf-note').value=(c.verify&&c.verify.note)||'';
+  $('vfModal').style.display='flex';
+}
+
+$('vf-close').addEventListener('click', ()=>{ $('vfModal').style.display='none'; });
+
+$('vf-save').addEventListener('click', ()=>{
+  const c=candidates.find(x=>x.id===vfCid); if(!c) return;
+  const price=numVal('vf-price');
+  if(isNaN(price)||price<=0){ setStatus('현재가를 입력하세요',true); return; }
+  c.verify={date:todayStr(), price, verdict:$('vf-verdict').value, note:$('vf-note').value.trim()};
+  save(); render();
+  $('vfModal').style.display='none';
+  setStatus('검증 기록됨: '+c.name);
 });
 
 function renderBackupStatus(){
