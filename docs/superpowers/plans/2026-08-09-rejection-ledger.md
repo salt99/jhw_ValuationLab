@@ -132,9 +132,10 @@ grp('isSeeded (소급 등록 배지)');
 /* ---- verifyDaysLeft ---- */
 grp('verifyDaysLeft (3년 = 1095일)');
 {
+  // D-0 기준일은 2023-08-10이다. 3×365로 계산하면 2024-02-29를 빠뜨려 하루 어긋난다.
   eq('오늘 기각 → D-1095', api.verifyDaysLeft({rejectedDate:'2026-08-09'}, NOW), 1095);
-  eq('정확히 1095일 전 기각 → 0', api.verifyDaysLeft({rejectedDate:'2023-08-11'}, NOW), 0);
-  eq('1100일 전 기각 → 음수', api.verifyDaysLeft({rejectedDate:'2023-08-06'}, NOW), -5);
+  eq('정확히 1095일 전 기각 → 0', api.verifyDaysLeft({rejectedDate:'2023-08-10'}, NOW), 0);
+  eq('기한을 5일 넘긴 기각 → -5', api.verifyDaysLeft({rejectedDate:'2023-08-05'}, NOW), -5);
   eq('날짜가 깨졌으면 null', api.verifyDaysLeft({rejectedDate:''}, NOW), null);
 }
 
