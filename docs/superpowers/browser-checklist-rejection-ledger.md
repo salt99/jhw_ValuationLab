@@ -1,138 +1,95 @@
-# 브라우저 검증 체크리스트 — 후보 파이프라인
+# 브라우저 검증 — 후보 파이프라인
 
-서브에이전트는 브라우저를 못 열어서 Task 2~8의 확인 절차가 전부 미실행 상태입니다.
-`index_kelly.html`을 브라우저에서 열고 아래를 순서대로 확인하세요.
+서브에이전트는 브라우저를 못 열어서, 이 기능의 렌더·클릭 경로는 아무도 실제로 본 적이 없다.
+구문 파싱과 순수 함수 테스트만 통과한 상태다.
 
-**시작 전 백업**: 도구의 `내보내기`로 현재 `kelly2y`를 JSON으로 받아두세요. 아래 절차 중
-콘솔로 데이터를 조작하는 단계가 있습니다.
+**2단계로 나뉜다. 1단계는 붙여넣기 한 번, 2단계는 눈으로 보는 것뿐이다.**
 
 ---
 
-## 0. 회귀 — 기존 기능이 멀쩡한가 (Task 2)
+## 1단계 — 자동 검사 (30초)
 
-- [ ] 파일을 열었을 때 기존 종목·원장·현금 기록이 **그대로** 보인다
-- [ ] 콘솔에 빨간 에러가 없다
-- [ ] DevTools 콘솔에서:
-  ```js
-  const s = JSON.parse(localStorage.getItem('kelly2y'));
-  console.log('v', s.v, '| intro', s.rejIntroDate, '| cands', s.candidates);
-  ```
-  → `v` 는 `4`, `cands` 는 `[]`, `intro` 에 숫자가 들어 있다
-- [ ] **새로고침 후 같은 명령을 다시 실행 → `intro` 값이 바뀌지 않는다**
-  (바뀌면 기각률 분모가 매번 리셋되는 버그)
+`index_kelly.html`을 브라우저에서 열고, DevTools 콘솔에
+`docs/superpowers/selfcheck-rejection-ledger.js` 파일 **전체**를 붙여넣고 엔터.
 
-## 1. 백업 왕복 (Task 2 · 수정 라운드에서 고친 부분)
+30여 개 항목이 표로 출력된다. 데이터 무결성은 전부 여기서 확인된다:
 
-- [ ] `내보내기` → JSON 파일에 `candidates` 와 `rejIntroDate` 키가 있다
-- [ ] 그 파일을 `가져오기` → 종목 목록이 그대로다
+- 저장 포맷 v4, 도입일 불변성, `candidates` 오염 가드
+- 기각률 회계 (thesis 분자 제외, 도입 이전 종목 분모 제외, 레거시 id 제외)
+- 14일 유예 · 소급 배지 · 3년 검증 D-day 판정
+- 섹션 분리와 헤더 숫자의 1:1 대응, 검토중 정렬
+- **잠긴 기각을 DevTools로 강제 활성화해 저장해도 데이터가 안 바뀌는지** ← 이 기능의 핵심
+- 가격 미입력으로 저장이 거부될 때 유령 후보가 안 생기는지
+- thesis 청산 후 기각 모달 문구가 오염되지 않는지
 
-## 2. 카드가 보이는가 (Task 3)
+스크립트는 시작할 때 `kelly2y`를 통째로 백업하고 **끝나면 무슨 일이 있어도 되돌린다.**
+실패해도 실제 데이터는 안전하다.
 
-콘솔에 붙여넣어 시드 데이터를 넣습니다:
+- [ ] `전부 통과` 가 초록색으로 출력됐다
+
+FAIL이 하나라도 나오면 항목 이름을 알려주면 고치겠다.
+
+---
+
+## 2단계 — 눈으로 볼 것 (5분)
+
+기계가 판단할 수 없는 것만 남겼다. 아래를 콘솔에 붙여 화면용 데이터를 넣는다:
 
 ```js
-const s = JSON.parse(localStorage.getItem('kelly2y'));
-const D = 864e5, now = Date.now();
-s.candidates = [
-  {id:(now-70*D).toString(36), name:'Costco', status:'reviewing', startDate:'2026-06-01'},
-  {id:(now-20*D).toString(36), name:'Visa',   status:'reviewing', startDate:'2026-07-20'},
-  {id:(now-1*D).toString(36),  name:'Arista', status:'rejected',  startDate:'2026-08-05',
-   rejectedDate:'2026-08-09', rejectedAt:now-1*D, rejectPrice:142, rejectReason:'factor',
-   trigger:'반도체 노출 줄면 재검토', note:'', linkedHoldingId:null, verify:null},
-  {id:(now-40*D).toString(36), name:'TSMC',   status:'rejected',  startDate:'2023-05-01',
-   rejectedDate:'2023-05-02', rejectedAt:now-40*D, rejectPrice:210, rejectReason:'valuation',
-   trigger:'PBR 6배 이하 재검토', note:'', linkedHoldingId:null, verify:null},
-  {id:(now-5*D).toString(36),  name:'Nvidia', status:'rejected',  startDate:'2026-01-01',
-   rejectedDate:'2026-03-11', rejectedAt:now-5*D, rejectPrice:890, rejectReason:'thesis',
-   trigger:'데이터센터 성장 재가속 시 재검토', note:'', linkedHoldingId:null, verify:null}
-];
-localStorage.setItem('kelly2y', JSON.stringify(s)); location.reload();
+const s=JSON.parse(localStorage.getItem('kelly2y')), D=864e5, n=Date.now();
+const iso=m=>new Date(m).toISOString().slice(0,10);
+s.candidates=[
+ {id:'d1',name:'Costco',status:'reviewing',startDate:iso(n-70*D)},
+ {id:'d2',name:'Visa',status:'reviewing',startDate:iso(n-20*D)},
+ {id:'d3',name:'Arista',status:'rejected',startDate:iso(n-10*D),rejectedDate:iso(n-D),
+  rejectedAt:n-D,rejectPrice:142,rejectReason:'factor',trigger:'반도체 노출 줄면 재검토',
+  note:'',linkedHoldingId:null,verify:null},
+ {id:'d4',name:'TSMC',status:'rejected',startDate:iso(n-1200*D),rejectedDate:iso(n-1200*D),
+  rejectedAt:n-40*D,rejectPrice:210,rejectReason:'valuation',trigger:'PBR 6배 이하 재검토',
+  note:'',linkedHoldingId:null,verify:null},
+ {id:'d5',name:'Nvidia',status:'rejected',startDate:iso(n-200*D),rejectedDate:iso(n-5*D),
+  rejectedAt:n-5*D,rejectPrice:890,rejectReason:'thesis',trigger:'데이터센터 재가속 시 재검토',
+  note:'',linkedHoldingId:null,verify:null}];
+localStorage.setItem('kelly2y',JSON.stringify(s)); location.reload();
 ```
 
-- [ ] 하단에 `후보 파이프라인` 카드가 있다
-- [ ] 헤더: `검토중 2 · 기각 2 · 편입 N · 칸 회수 1`
-- [ ] **헤더의 `기각 2` ↔ `▸ 기각` 카드 2장, `칸 회수 1` ↔ `▸ 칸 회수` 카드 1장** — 숫자와 카드 수가 일치
-- [ ] 검토중은 **Costco(위) → Visa(아래)** 순서 (오래된 것이 위)
-- [ ] Arista: `⏳ 검증 D-1094` 부근, `삭제` 버튼 **있음** (등재 1일 전 = 유예 내)
-- [ ] TSMC: `🔍 검증 필요` + `검증` 버튼, `소급 등록` 배지, `삭제` 버튼 **없음**, 잠김 안내문 있음
-- [ ] Nvidia는 `▸ 칸 회수` 섹션에 있고 사유가 `thesis 파기 청산`
-- [ ] 글자가 안 깨지고 색이 나머지 도구와 같다 (스타일이 안 먹으면 CSS 클래스 오타)
-- [ ] **모바일 폭(폰)에서 가로 스크롤이 안 생긴다**
+### 보기
 
-## 3. 후보 등록 · 삭제 (Task 4)
+- [ ] 하단에 `후보 파이프라인` 카드가 있고, 나머지 도구와 **색·폰트가 같다**
+      (스타일이 안 먹으면 CSS 클래스 오타 — 파싱 검사로는 안 잡힌다)
+- [ ] 섹션이 `▸ 검토중` / `▸ 기각` / `▸ 칸 회수` 세 개로 보인다
+- [ ] TSMC에 `🔍 검증 필요`(앰버색) 와 `소급 등록` 배지가 있다
+- [ ] TSMC에는 `삭제` 버튼이 없고 잠김 안내문이 있다 (Arista에는 삭제 버튼이 있다)
+- [ ] **폰 폭으로 좁혔을 때 가로 스크롤이 안 생긴다** — 모바일 우선 원칙(P3)
+- [ ] 콘솔에 빨간 에러가 없다
 
-- [ ] `+ 후보 등록` → 모달이 뜬다
-- [ ] 종목명 비운 채 `검토중으로 등록` → `종목명을 입력하세요` 경고, 아무것도 안 생김
-- [ ] `Progressive` 입력 → 등록 → 검토중 목록에 `0일 · <오늘>`, 헤더 검토중 +1
-- [ ] **모달에 날짜 입력란이 없다** (의도된 설계)
-- [ ] 새로고침 → 그대로 남아 있다
-- [ ] `삭제` → 확인창 → 사라짐, 카운트 −1
-- [ ] TSMC(잠김)의 카드에는 `삭제` 버튼 자체가 없다
-- [ ] 모달 **배경을 클릭하면 닫힌다** (Task 5에서 추가)
+### 눌러보기
 
-## 4. 기각 등재 · 14일 유예 (Task 5)
+- [ ] `+ 후보 등록` → 모달이 뜨고, **배경을 클릭하면 닫힌다**
+- [ ] 이름만 넣고 `검토중으로 등록` → 목록에 `0일`로 나타난다 (날짜 입력란은 없는 게 정상)
+- [ ] TSMC의 `검증` → 모달에 당시 주가·트리거가 보이고,
+      하단에 **"TOOL 03의 r·N 가정을 재검토하세요"** 문구가 있다
+- [ ] 현재가 `310`, `기각이 틀렸다` 로 저장 → 카드가 `$210 → $310 (+48%)` 로 바뀐다
+- [ ] 검토중 항목의 `편입` → 종목 추가 폼으로 스크롤되고 종목명이 채워진다
+- [ ] **거기서 아무것도 안 하고 새로고침 → 후보가 그대로 남아 있다** (사라지면 버그)
 
-- [ ] 검토중 항목의 `기각` → 모달, 기각일이 오늘로 채워져 있다
-- [ ] 트리거를 비운 채 저장 → 거부 (`재검토 트리거를 적어주세요…`)
-- [ ] 주가 `142`, 사유 `팩터 중복`, 트리거 입력 후 저장 → `▸ 기각`으로 이동, 헤더 카운트 이동
-- [ ] 사유 드롭다운에 **`thesis 파기 청산` 항목이 없다** (자동 등재 전용)
-- [ ] `+ 후보 등록` → 이름 입력 → `바로 기각 등재` → 기각 모달이 바로 뜬다
-- [ ] **그 모달을 저장하지 않고 닫는다 → 검토중 목록에 유령 항목이 안 생긴다**
-- [ ] 방금 만든 기각의 `✎ 수정` → 기각일·주가·사유가 **입력 가능**
-- [ ] 잠김 확인 — 콘솔에서 등재 시각을 15일 전으로 되돌린다:
-  ```js
-  const s=JSON.parse(localStorage.getItem('kelly2y'));
-  s.candidates.find(c=>c.status==='rejected').rejectedAt = Date.now()-15*864e5;
-  localStorage.setItem('kelly2y',JSON.stringify(s)); location.reload();
-  ```
-  - [ ] `삭제` 버튼 사라짐, `✎` 라벨이 `트리거·메모`로 바뀜
-  - [ ] 모달 열면 기각일·주가·사유가 **회색(disabled)**, 잠김 안내문 표시
-  - [ ] 트리거만 고쳐 저장 → 트리거는 바뀌고 **주가·사유는 그대로**
-  - [ ] 저장 후 콘솔로 확인: `JSON.parse(localStorage.getItem('kelly2y')).candidates` 에서
-        해당 항목의 `rejectPrice`/`rejectReason`/`rejectedDate` 가 **변하지 않았다**
-        (UI만 막고 저장 로직이 덮어쓰면 잠금이 무의미)
-  - [ ] `rejectedAt` 도 그대로다 (수정 때 갱신되면 유예가 무한 연장됨)
+### 실제 매매 흐름 (기존 기능 회귀 + 칸 회수)
 
-## 5. 3년 검증
-
-- [ ] TSMC(`🔍 검증 필요`)의 `검증` → 모달에 `2023-05-02 · $210`과 당시 트리거가 보인다
-- [ ] 현재가 `310`, 판정 `기각이 틀렸다` → 저장
-- [ ] 카드에 `$210 → $310 (+48%) · 기각이 틀렸음`, 배지 `✓ 검증 완료`, 버튼 `검증 보기`
-- [ ] 모달 하단에 **TOOL 03의 r·N 가정을 재검토하라**는 문구가 있다
-
-## 6. 편입 연결
-
-- [ ] 검토중 항목의 `편입` → 종목 추가 폼으로 스크롤, 종목명 프리필
-- [ ] **여기서 아무것도 안 하고 새로고침 → 후보가 검토중에 그대로 남아 있다**
-- [ ] 다시 `편입` → 가격·목표·승률 입력 → `추가` → 보유 목록에 생기고 검토중에서 사라짐
-- [ ] 헤더: 검토중 −1, 편입 +1
-
-## 7. thesis 자동 등재 · 재진입 차단
-
-- [ ] 종목 추가 → 매수 기록 → **전량 매도**, 사유 `원 논지 훼손`
-- [ ] 매도 저장 직후 **칸 회수 모달**이 뜨고 주가·날짜가 프리필돼 있다
-- [ ] 트리거 입력 후 저장 → `▸ 칸 회수` 섹션에 등재, 헤더 `칸 회수` +1
-- [ ] **기각률은 변하지 않는다** (thesis는 분자에서 제외)
-- [ ] 같은 이름으로 `종목 추가` → `새 1칸` 경고 확인창 → 진행하면 **새 행**이 생긴다
-- [ ] 청산된 historical 행을 펼쳐 새 매수 기록 시도 → **차단 메시지**, 모달이 안 열린다
-- [ ] 그 행의 기존 기록 `✎ 수정`은 **여전히 열린다**
+- [ ] 기존 종목·원장·현금 기록이 **그대로** 보인다
+- [ ] 테스트 종목을 하나 추가 → 매수 기록 → **전량 매도, 사유 `원 논지 훼손`**
+- [ ] 매도 직후 **칸 회수 모달**이 뜨고 주가·날짜가 채워져 있다
+- [ ] 트리거 입력 후 저장 → `▸ 칸 회수` 에 등재되고 **기각률은 안 변한다**
+- [ ] 같은 이름으로 다시 `종목 추가` → `새 1칸` 경고가 뜨고, 진행하면 **새 행**이 생긴다
+- [ ] 청산된 종목의 historical 행에서 새 매수 기록 시도 → 차단 메시지
+- [ ] 그 행의 기존 기록 `✎ 수정`은 여전히 열린다
 
 ---
 
 ## 마무리
 
-- [ ] 마지막으로 `s.candidates = []` 로 되돌리거나, 실제로 쓸 대기열
-      (Costco · Visa/Mastercard · Danaher/Thermo Fisher · Progressive · Arista)을
-      `+ 후보 등록`으로 직접 넣는다 — 전부 오늘 날짜로 시작 (설계상 소급 입력 없음)
-- [ ] 허브(`index.html`)에서 다른 도구 3개도 열어 콘솔 에러가 없는지 확인
+- [ ] 콘솔에서 `candidates=[]; save(); render();` 로 테스트 데이터를 지운다
+- [ ] 실제 대기열(Costco · Visa/Mastercard · Danaher/Thermo Fisher · Progressive · Arista)을
+      `+ 후보 등록`으로 넣는다 — 전부 오늘 날짜로 시작한다 (설계상 소급 입력 없음)
+- [ ] 허브(`index.html`)에서 다른 도구 3개도 열어 콘솔 에러가 없는지 본다
 
-## 8. 최종 리뷰에서 고친 두 가지 (반드시 확인)
-
-교차 태스크 결함이라 태스크별 리뷰가 잡을 수 없었던 것들입니다.
-
-- [ ] **`rj-intro` 오염** — 위 §7에서 thesis 청산으로 칸 회수를 등재한 **직후**,
-      새로고침하지 말고 `[+ 후보 등록] → [바로 기각 등재]`를 누른다.
-      모달 상단 문구가 `기각 판단을 기록합니다. 3년 뒤 이 판단이 옳았는지 검증합니다.` 여야 한다.
-      `thesis 파기로 청산했습니다…`가 남아 있으면 수정이 안 먹은 것.
-- [ ] **백업 복원 경고** — 구버전 백업(`candidates` 키가 없는 JSON)을 `가져오기` 하면
-      확인창에 `후보 N건 → 0건`과 ⚠ 경고줄이 보여야 한다. 취소를 눌러 실제로 덮어쓰지는 말 것.
+여기까지 통과하면 `main` 병합 = GitHub Pages 배포.
