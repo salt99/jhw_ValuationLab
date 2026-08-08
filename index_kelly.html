@@ -518,6 +518,55 @@
 </div>
 
 <script>
+/* ===== PIPELINE PURE ===== (test_pipeline.js가 이 블록을 추출해 DOM 없이 검증한다) */
+const GRACE_MS = 14*864e5;     // 기각 등재 후 수정·삭제 유예 = 소급 배지 임계
+const VERIFY_DAYS = 1095;      // 3년 검증
+
+/* 기각 등재 시각 기준 유예 판정. id(후보 등록 시각)나 rejectedDate(소급 가능)를 쓰면 안 된다. */
+function isEditable(c, now){
+  return Number.isFinite(c.rejectedAt) && (now - c.rejectedAt) < GRACE_MS;
+}
+/* 주장한 기각일과 실제 등재 시각이 GRACE_MS 이상 벌어지면 기억 기반 소급 등록으로 본다. */
+function isSeeded(c){
+  const d = Date.parse(c.rejectedDate);
+  if(!Number.isFinite(d) || !Number.isFinite(c.rejectedAt)) return false;
+  return (c.rejectedAt - d) > GRACE_MS;
+}
+function verifyDaysLeft(c, now){
+  const d = Date.parse(c.rejectedDate);
+  if(!Number.isFinite(d)) return null;
+  return Math.ceil((d + VERIFY_DAYS*864e5 - now)/864e5);
+}
+/* 기각률 분자에서 thesis를 뺀다 — 산 적 있는 종목이라 분모의 편입에도 들어가 비율이 부풀려진다. */
+function rejectionStats(candidates, holdings, introMs){
+  const cs = candidates||[];
+  const rejectedAll = cs.filter(c=>c.status==='rejected');
+  const punchesBack = rejectedAll.filter(c=>c.rejectReason==='thesis');
+  const realRejects = rejectedAll.filter(c=>c.rejectReason!=='thesis');
+  const adopted = (holdings||[]).filter(h=>{
+    const t = parseInt(h.id,36);
+    return Number.isFinite(t) && Number.isFinite(introMs) && t >= introMs;
+  });
+  const denom = realRejects.length + adopted.length;
+  return {
+    reviewing: cs.filter(c=>c.status==='reviewing').length,
+    rejected: realRejects.length,
+    punchesBack: punchesBack.length,
+    adopted: adopted.length,
+    rate: denom ? realRejects.length/denom : null
+  };
+}
+/* rejIntroDate는 한 번 기록되면 갱신하지 않는다 — 갱신되면 기각률 분모가 매번 리셋된다. */
+function migrateCandidates(d, nowMs){
+  const had = Number.isFinite(d.rejIntroDate);
+  return {
+    candidates: d.candidates || [],
+    rejIntroDate: had ? d.rejIntroDate : nowMs,
+    needsSave: !had
+  };
+}
+/* ===== /PIPELINE PURE ===== */
+
 const KEY='kelly2y';
 let holdings=[];      // {id,name,price,up,down,prob,startQ,ledger:[]}
                       // ledger entry: {id,date,quarter,type,shares?,amount,price,reason,sellReason?}
