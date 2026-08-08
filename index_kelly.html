@@ -1040,7 +1040,8 @@ $('addBtn').addEventListener('click',()=>{
   const fx = baseCcy==='USD' ? 1 : (newCcy==='USD' ? (numVal('i-fx')||1400) : 1);
   holdings.push({id:Date.now().toString(36),name,price,up,down,prob,startQ,ccy:useCcy,fx,ledger:[]});
   if(pendingAdoptId){
-    candidates=candidates.filter(x=>x.id!==pendingAdoptId);   // 편입 확정 후에만 제거
+    const pc=candidates.find(x=>x.id===pendingAdoptId);
+    if(pc && pc.name===name) candidates=candidates.filter(x=>x.id!==pendingAdoptId);   // 제출된 종목이 대상 후보와 일치할 때만 제거
     pendingAdoptId=null;
   }
   save();render();
