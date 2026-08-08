@@ -19,11 +19,18 @@
     const now = Date.now();
     const iso = (ms) => new Date(ms).toISOString().slice(0, 10);
 
-    /* ---------- 1. 저장 포맷 ---------- */
-    const snap = JSON.parse(RAW || '{}');
-    ok('스냅샷 v4', snap.v === 4, 'v=' + snap.v);
-    ok('candidates 배열', Array.isArray(snap.candidates), typeof snap.candidates);
-    ok('rejIntroDate 숫자', Number.isFinite(snap.rejIntroDate), snap.rejIntroDate);
+    /* ---------- 1. 저장 포맷 ----------
+       실데이터가 있을 때만 검사한다. 로컬 파일(file://)은 배포본(github.io)과 오리진이
+       달라 저장소가 비어 있는 것이 정상이며, 그건 결함이 아니다. */
+    if (RAW === null) {
+      R.push({ n: '저장 포맷 (v4 · candidates · rejIntroDate)', pass: true,
+               got: '건너뜀 — 이 오리진에 저장된 데이터 없음' });
+    } else {
+      const snap = JSON.parse(RAW);
+      ok('스냅샷 v4', snap.v === 4, 'v=' + snap.v);
+      ok('candidates 배열', Array.isArray(snap.candidates), typeof snap.candidates);
+      ok('rejIntroDate 숫자', Number.isFinite(snap.rejIntroDate), snap.rejIntroDate);
+    }
 
     /* ---------- 2. 도입일 불변 ---------- */
     const m1 = migrateCandidates({ candidates: [], rejIntroDate: 111 }, 999);
