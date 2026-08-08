@@ -1032,6 +1032,11 @@ $('addBtn').addEventListener('click',()=>{
   let startQ=$('i-startq').value.trim().toUpperCase();
   if(!parseQ(startQ)) startQ=currentQGuess();
   if(!name){setStatus('종목명을 입력하세요',true);return;}
+  const prior=thesisRejectByName(name);
+  if(prior && !confirm(
+      `${name}은(는) ${prior.rejectedDate}에 thesis 파기로 청산한 종목입니다.\n\n`+
+      `재진입은 새 1칸을 씁니다. 기존 기록에 이어 붙지 않고 새 항목으로 추가됩니다.\n`+
+      `한 번 틀렸던 회사이므로 검증 기준을 더 높게 잡으세요.\n\n진행할까요?`)) return;
   if(isNaN(price)||isNaN(up)||isNaN(down)){setStatus('가격·목표를 모두 입력하세요',true);return;}
   if(prob===null){setStatus('승률을 입력하세요',true);return;}
   if(price<=0){setStatus('현재가는 0보다 커야 합니다',true);return;}
@@ -1648,6 +1653,17 @@ function rejectCard(c, now){
   </div>`;
 }
 
+function normName(s){ return (s||'').replace(/\s+/g,'').toLowerCase(); }
+function thesisRejectOf(holdingId){
+  return candidates.find(c=>c.status==='rejected' && c.rejectReason==='thesis'
+                           && c.linkedHoldingId===holdingId);
+}
+function thesisRejectByName(name){
+  const n=normName(name);
+  return candidates.find(c=>c.status==='rejected' && c.rejectReason==='thesis'
+                           && normName(c.name)===n);
+}
+
 function renderPipeline(){
   const st=rejectionStats(candidates, holdings, rejIntroDate);
   const rateStr = st.rate===null ? '—'
@@ -1886,6 +1902,10 @@ $('import-file').addEventListener('change',e=>{
 let lmCtx={hid:null,qkey:null,type:'buy',qTarget:0,editId:null};
 function openLogModal(hid,qkey){
   const h=holdings.find(x=>x.id===hid); if(!h) return;
+  if(thesisRejectOf(h.id)){
+    setStatus('thesis 파기로 청산한 종목입니다 — 재진입은 [종목 추가]로 새로 등록하세요',true);
+    return;
+  }
   lmCtx={hid,qkey,type:'buy',qTarget:0,editId:null};
   const ccy=ccyOf(h), sym=ccySym(ccy);
   $('lm-title').textContent=`${h.name} · ${qkey} 기록`;
@@ -2127,6 +2147,20 @@ $('lm-save').addEventListener('click',()=>{
   h.ledger.push(entry);
   save(); $('logModal').style.display='none'; render();
   setStatus((type==='buy'?'매수':type==='sell'?'매도':'보류')+' 기록됨');
+
+  // thesis 파기 + 전량 청산 = 칸 회수. 기각 원장에 등재한다.
+  if(type==='sell'){
+    const sr=entry.sellReason;
+    const thesisBroken=(sr==='thesis'||sr==='criteria'||sr==='better');
+    if(thesisBroken && ledgerStats(h).netShares<=0 && !thesisRejectOf(h.id)){
+      openRejectModal(null, {name:h.name, price:entry.price, date:entry.date||todayStr(),
+                             reason:'thesis', holdingId:h.id});
+      $('rj-title').textContent=`${h.name} · 칸 회수`;
+      $('rj-intro').textContent=
+        'thesis 파기로 청산했습니다. 기각 원장에 등재됩니다. 재진입은 새 1칸입니다.';
+      $('rj-reason').disabled=true;   // 사유는 rjCtx.forceReason='thesis'로 고정
+    }
+  }
 });
 
 /* ---- edit holding modal ---- */
