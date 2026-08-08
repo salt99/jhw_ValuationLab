@@ -1066,6 +1066,8 @@ const SELL_REASONS={
   rebal:'비중 조절 / 리밸런싱',
   target:'상단 목표가 도달',
 };
+// 논지 훼손형 사유 판정 — updateSellGuide()의 UI 안내와 lm-save의 칸 회수 자동등재가 공유한다
+function isThesisBroken(r){ return r==='thesis'||r==='criteria'||r==='better'; }
 
 /* 8-quarter tranche schedule for one holding */
 /* 8-quarter schedule: each quarter earnings report = a checkpoint.
@@ -2002,7 +2004,7 @@ function updateSellGuide(){
   const g=$('lm-sellguide'); if(!g) return;
   const reason=$('lm-sellreason').value;
   // 논지 훼손형 = 즉시 전량 / 밸류에이션형 = 분할 가능
-  const thesisBroken = (reason==='thesis'||reason==='criteria'||reason==='better');
+  const thesisBroken = isThesisBroken(reason);
   if(thesisBroken){
     g.className='sell-guide danger';
     g.innerHTML=`⚠ <b>논지가 깨진 매도</b> — 분할보다 <b>즉시 전량 청산</b>이 규율입니다. 틀린 포지션을 질질 끄는 건 손실을 키웁니다. <span class="sg-act" data-sg="100">전량 채우기</span>`;
@@ -2151,7 +2153,7 @@ $('lm-save').addEventListener('click',()=>{
   // thesis 파기 + 전량 청산 = 칸 회수. 기각 원장에 등재한다.
   if(type==='sell'){
     const sr=entry.sellReason;
-    const thesisBroken=(sr==='thesis'||sr==='criteria'||sr==='better');
+    const thesisBroken=isThesisBroken(sr);
     if(thesisBroken && ledgerStats(h).netShares<=0 && !thesisRejectOf(h.id)){
       openRejectModal(null, {name:h.name, price:entry.price, date:entry.date||todayStr(),
                              reason:'thesis', holdingId:h.id});
