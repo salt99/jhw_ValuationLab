@@ -692,6 +692,7 @@ let holdings=[];      // {id,name,price,up,down,prob,startQ,ledger:[]}
 let candidates=[];    // {id,name,status,startDate, rejectedDate,rejectedAt,rejectPrice,
                       //  rejectReason,trigger,note,linkedHoldingId,verify}
 let rejIntroDate=0;   // 후보 파이프라인 도입 시각(ms) — 기각률 분모 필터. 1회만 기록.
+let pendingAdoptId=null;   // 편입 진행 중인 후보 id — holdings 생성이 확정된 뒤에만 지운다
 let totalCapital=0;   // 총 원금 (달러) = usdHolding + krwHolding/baseFx
 let usdHolding=0;     // 달러 보유액 ($)
 let krwHolding=0;     // 원화 보유액 (₩)
@@ -1038,6 +1039,10 @@ $('addBtn').addEventListener('click',()=>{
   const useCcy = baseCcy==='USD' ? 'USD' : newCcy;
   const fx = baseCcy==='USD' ? 1 : (newCcy==='USD' ? (numVal('i-fx')||1400) : 1);
   holdings.push({id:Date.now().toString(36),name,price,up,down,prob,startQ,ccy:useCcy,fx,ledger:[]});
+  if(pendingAdoptId){
+    candidates=candidates.filter(x=>x.id!==pendingAdoptId);   // 편입 확정 후에만 제거
+    pendingAdoptId=null;
+  }
   save();render();
   $('i-name').value='';$('i-price').value='';$('i-up').value='';$('i-down').value='';$('i-startq').value='';
   updatePreview();setStatus('추가됨: '+name);
@@ -1731,6 +1736,14 @@ function bindPipeline(){
   }));
   document.querySelectorAll('[data-plvf]').forEach(b=>b.addEventListener('click',()=>{
     openVerifyModal(b.dataset.plvf);
+  }));
+  document.querySelectorAll('[data-pladopt]').forEach(b=>b.addEventListener('click',()=>{
+    const c=candidates.find(x=>x.id===b.dataset.pladopt); if(!c) return;
+    pendingAdoptId=c.id;
+    $('i-name').value=c.name;
+    $('i-name').scrollIntoView({behavior:'smooth', block:'center'});
+    $('i-price').focus();
+    setStatus(`${c.name} 편입 — 가격·목표·승률을 입력하고 추가하세요`);
   }));
 }
 
