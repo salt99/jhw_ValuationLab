@@ -230,7 +230,7 @@ function migrateCandidates(d, nowMs){
 
 ```bash
 git add index_kelly.html test_pipeline.js
-git commit -m "feat(kelly): add pipeline pure functions with node harness
+git commit -m "feat(kelly): add pipeline pure functions
 
 기각률·유예·소급 판정은 배포 전 손계산과 대조해야 하는 로직인데
 단일 파일 HTML 안에 있으면 검증할 방법이 없다. 마커로 감싼 블록만
@@ -309,7 +309,7 @@ console.log('holdings', before.holdings.length, 'v', before.v,
 
 ```bash
 git add index_kelly.html
-git commit -m "feat(kelly): wire candidates state into v4 snapshot
+git commit -m "feat(kelly): wire candidates into v4 snapshot
 
 기각률 분모(편입 건수)가 kelly2y 안에 있어야 계산되므로 후보
 데이터를 같은 스냅샷에 넣는다. 도입일을 1회만 기록해 두지 않으면
@@ -608,7 +608,7 @@ function bindPipeline(){
 
 ```bash
 git add index_kelly.html
-git commit -m "feat(kelly): add candidate registration and removal
+git commit -m "feat(kelly): add candidate registration
 
 검토중 항목은 아직 결론이 아니므로 자유 삭제를 허용한다.
 시작일 입력을 받지 않는 것은 소급 날짜의 신뢰도 문제 때문이다."
@@ -794,7 +794,7 @@ localStorage.setItem('kelly2y',JSON.stringify(s)); location.reload();
 
 ```bash
 git add index_kelly.html
-git commit -m "feat(kelly): add rejection entry with 14-day grace lock
+git commit -m "feat(kelly): add rejection entry with grace lock
 
 트리거를 필수로 둔 것은 구체적 숫자가 없으면 3년 뒤 검증할
 대상 자체가 없기 때문이다. 유예 기준을 rejectedAt으로 잡은 것은
@@ -989,7 +989,7 @@ let pendingAdoptId=null;   // 편입 진행 중인 후보 id — holdings 생성
 
 ```bash
 git add index_kelly.html
-git commit -m "feat(kelly): link candidate adoption to holding creation
+git commit -m "feat(kelly): link adoption to holding creation
 
 후보 삭제를 폼 이동 시점이 아니라 holdings 생성 직후로 미룬다.
 입력을 중단하면 후보가 증발해 대기열에서 사라지기 때문이다."
@@ -1092,7 +1092,7 @@ thesis 청산 후에도 원 종목은 historical 행으로 남고(`index_kelly.h
 
 ```bash
 git add index_kelly.html
-git commit -m "feat(kelly): auto-log thesis liquidation as punch recovery
+git commit -m "feat(kelly): auto-log thesis liquidation
 
 칸이 뚫리는 순간은 thesis 확정 시점이므로 thesis 파기 청산은
 칸 회수다. 회수 사실이 남지 않으면 재진입이 공짜로 보이고,
