@@ -679,7 +679,7 @@ function rejectionStats(candidates, holdings, introMs){
 function migrateCandidates(d, nowMs){
   const had = Number.isFinite(d.rejIntroDate);
   return {
-    candidates: d.candidates || [],
+    candidates: Array.isArray(d.candidates) ? d.candidates : [],
     rejIntroDate: had ? d.rejIntroDate : nowMs,
     needsSave: !had
   };
@@ -1566,7 +1566,9 @@ function importData(file){
     const nUsd=d.usdHolding||d.totalCapital||0;
     const nKrw=d.krwHolding||0;
     const when=d.exportedAt?d.exportedAt.slice(0,10):'날짜미상';
-    if(!confirm(`가져올 백업: 종목 ${nHold}개 · 달러 $${(nUsd).toLocaleString('ko-KR')} · 원화 ₩${(nKrw).toLocaleString('ko-KR')} (${when} 백업)\n\n현재 데이터를 이 백업으로 덮어씁니다. 계속할까요?`)) return;
+    const nCand=Array.isArray(d.candidates)?d.candidates.length:0;
+    const candWarn=candidates.length>nCand?`\n⚠ 현재 후보 ${candidates.length}건 중 ${candidates.length-nCand}건이 사라집니다.`:'';
+    if(!confirm(`가져올 백업: 종목 ${nHold}개 · 달러 $${(nUsd).toLocaleString('ko-KR')} · 원화 ₩${(nKrw).toLocaleString('ko-KR')} · 후보 ${candidates.length}건 → ${nCand}건 (${when} 백업)${candWarn}\n\n현재 데이터를 이 백업으로 덮어씁니다. 계속할까요?`)) return;
     // 적용
     holdings=d.holdings||[];
     baseFx=d.baseFx||1500;
@@ -1781,6 +1783,7 @@ function openRejectModal(cid, opts){
 
   $('rj-title').textContent = editing ? `${c.name} · 기각 기록 수정`
                                       : `${rjCtx.name||'후보'} · 기각 등재`;
+  $('rj-intro').textContent = '기각 판단을 기록합니다. 3년 뒤 이 판단이 옳았는지 검증합니다.';
   $('rj-date').value  = (c&&c.rejectedDate) || opts.date || todayStr();
   $('rj-price').value = (c&&c.rejectPrice!=null?c.rejectPrice:(opts.price!=null?opts.price:''));
   $('rj-reason').value= (c&&c.rejectReason) || opts.reason || 'factor';
@@ -1867,6 +1870,7 @@ function openVerifyModal(cid){
 }
 
 $('vf-close').addEventListener('click', ()=>{ $('vfModal').style.display='none'; });
+$('vfModal').addEventListener('click',e=>{if(e.target===$('vfModal'))$('vfModal').style.display='none';});
 
 $('vf-save').addEventListener('click', ()=>{
   const c=candidates.find(x=>x.id===vfCid); if(!c) return;
