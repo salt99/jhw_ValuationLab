@@ -1507,6 +1507,47 @@ const REJECT_LABELS={
 };
 const VERDICT_LABELS={right:'기각이 옳았음', wrong:'기각이 틀렸음', unclear:'판단 보류'};
 
+/* 기각·칸 회수 카드 — 두 섹션이 같은 마크업을 쓴다 */
+function rejectCard(c, now){
+  const left=verifyDaysLeft(c, now);
+  let vBadge, vAct='';
+  if(c.verify){
+    vBadge=`<span class="pl-badge done">✓ 검증 완료</span>`;
+  } else if(left!==null && left<=0){
+    vBadge=`<span class="pl-badge due">🔍 검증 필요</span>`;
+    vAct=`<button class="btn ghost" data-plvf="${c.id}">검증</button>`;
+  } else {
+    vBadge=`<span class="pl-badge">⏳ 검증 D-${left===null?'?':left}</span>`;
+  }
+  const seeded=isSeeded(c)?`<span class="pl-badge">소급 등록</span>`:'';
+  const priceStr=Number.isFinite(c.rejectPrice)?`$${fmtNum(c.rejectPrice)}`:'—';
+
+  let vLine='';
+  if(c.verify){
+    const pct=c.rejectPrice?Math.round((c.verify.price/c.rejectPrice-1)*100):null;
+    const nowStr=Number.isFinite(c.verify.price)?`$${fmtNum(c.verify.price)}`:'—';
+    vLine=`<div class="pl-meta">${priceStr} → ${nowStr}`+
+          `${pct===null?'':` (${pct>=0?'+':''}${pct}%)`} · ${VERDICT_LABELS[c.verify.verdict]||''}</div>`;
+  }
+
+  const editable=isEditable(c, now);
+  return `<div class="pl-item">
+    <div class="pl-top"><span class="pl-name">${escapeHtml(c.name)}</span>
+      <span class="pl-date">${escapeHtml(c.rejectedDate||'')}</span></div>
+    <div class="pl-meta">${priceStr} · ${escapeHtml(REJECT_LABELS[c.rejectReason]||c.rejectReason||'')}</div>
+    ${c.trigger?`<div class="pl-trigger">↻ ${escapeHtml(c.trigger)}</div>`:''}
+    ${c.note?`<div class="pl-trigger">${escapeHtml(c.note)}</div>`:''}
+    ${vLine}
+    <div class="pl-badges">${vBadge}${seeded}</div>
+    <div class="pl-act">
+      ${vAct}
+      <button class="btn ghost" data-pledit="${c.id}">✎ ${editable?'수정':'트리거·메모'}</button>
+      ${editable?`<button class="btn ghost" data-pldel="${c.id}">삭제</button>`:''}
+    </div>
+    ${editable?'':`<div class="pl-locked">등재 14일 경과 — 기각일·주가·사유는 잠겼습니다.</div>`}
+  </div>`;
+}
+
 function renderPipeline(){
   const st=rejectionStats(candidates, holdings, rejIntroDate);
   const rateStr = st.rate===null ? '—'
@@ -1518,8 +1559,10 @@ function renderPipeline(){
   const now=Date.now();
   const reviewing=candidates.filter(c=>c.status==='reviewing')
     .sort((a,b)=>Date.parse(a.startDate)-Date.parse(b.startDate));   // 오래된 순
-  const rejected=candidates.filter(c=>c.status==='rejected')
-    .sort((a,b)=>Date.parse(b.rejectedDate)-Date.parse(a.rejectedDate)); // 최신 순
+  const rejected=candidates.filter(c=>c.status==='rejected' && c.rejectReason!=='thesis')
+    .sort((a,b)=>Date.parse(b.rejectedDate)-Date.parse(a.rejectedDate));   // 최신 순
+  const recovered=candidates.filter(c=>c.status==='rejected' && c.rejectReason==='thesis')
+    .sort((a,b)=>Date.parse(b.rejectedDate)-Date.parse(a.rejectedDate));   // 최신 순
 
   let html='';
   if(!candidates.length){
@@ -1532,7 +1575,7 @@ function renderPipeline(){
       const days=Math.floor((now-Date.parse(c.startDate))/864e5);
       html+=`<div class="pl-item">
         <div class="pl-top"><span class="pl-name">${escapeHtml(c.name)}</span>
-          <span class="pl-date">${days}일 · ${c.startDate}</span></div>
+          <span class="pl-date">${days}일 · ${escapeHtml(c.startDate||'')}</span></div>
         <div class="pl-act">
           <button class="btn ghost" data-plrej="${c.id}">기각</button>
           <button class="btn ghost" data-pladopt="${c.id}">편입</button>
@@ -1543,43 +1586,11 @@ function renderPipeline(){
 
   if(rejected.length){
     html+=`<div class="pl-group">▸ 기각 (최신 순)</div>`;
-    rejected.forEach(c=>{
-      const left=verifyDaysLeft(c, now);
-      let vBadge, vAct='';
-      if(c.verify){
-        vBadge=`<span class="pl-badge done">✓ 검증 완료</span>`;
-      } else if(left!==null && left<=0){
-        vBadge=`<span class="pl-badge due">🔍 검증 필요</span>`;
-        vAct=`<button class="btn ghost" data-plvf="${c.id}">검증</button>`;
-      } else {
-        vBadge=`<span class="pl-badge">⏳ 검증 D-${left===null?'?':left}</span>`;
-      }
-      const seeded=isSeeded(c)?`<span class="pl-badge">소급 등록</span>`:'';
-
-      let vLine='';
-      if(c.verify){
-        const pct=c.rejectPrice?Math.round((c.verify.price/c.rejectPrice-1)*100):null;
-        vLine=`<div class="pl-meta">$${fmtNum(c.rejectPrice)} → $${fmtNum(c.verify.price)}`+
-              `${pct===null?'':` (${pct>=0?'+':''}${pct}%)`} · ${VERDICT_LABELS[c.verify.verdict]||''}</div>`;
-      }
-
-      const editable=isEditable(c, now);
-      html+=`<div class="pl-item">
-        <div class="pl-top"><span class="pl-name">${escapeHtml(c.name)}</span>
-          <span class="pl-date">${c.rejectedDate||''}</span></div>
-        <div class="pl-meta">$${fmtNum(c.rejectPrice)} · ${REJECT_LABELS[c.rejectReason]||c.rejectReason}</div>
-        ${c.trigger?`<div class="pl-trigger">↻ ${escapeHtml(c.trigger)}</div>`:''}
-        ${c.note?`<div class="pl-trigger">${escapeHtml(c.note)}</div>`:''}
-        ${vLine}
-        <div class="pl-badges">${vBadge}${seeded}</div>
-        <div class="pl-act">
-          ${vAct}
-          <button class="btn ghost" data-pledit="${c.id}">✎ ${editable?'수정':'트리거·메모'}</button>
-          ${editable?`<button class="btn ghost" data-pldel="${c.id}">삭제</button>`:''}
-        </div>
-        ${editable?'':`<div class="pl-locked">등재 14일 경과 — 기각일·주가·사유는 잠겼습니다.</div>`}
-      </div>`;
-    });
+    rejected.forEach(c=>{ html+=rejectCard(c, now); });
+  }
+  if(recovered.length){
+    html+=`<div class="pl-group">▸ 칸 회수 (최신 순)</div>`;
+    recovered.forEach(c=>{ html+=rejectCard(c, now); });
   }
   $('pl-body').innerHTML=html;
 }
