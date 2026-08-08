@@ -570,6 +570,9 @@ function migrateCandidates(d, nowMs){
 const KEY='kelly2y';
 let holdings=[];      // {id,name,price,up,down,prob,startQ,ledger:[]}
                       // ledger entry: {id,date,quarter,type,shares?,amount,price,reason,sellReason?}
+let candidates=[];    // {id,name,status,startDate, rejectedDate,rejectedAt,rejectPrice,
+                      //  rejectReason,trigger,note,linkedHoldingId,verify}
+let rejIntroDate=0;   // 후보 파이프라인 도입 시각(ms) — 기각률 분모 필터. 1회만 기록.
 let totalCapital=0;   // 총 원금 (달러) = usdHolding + krwHolding/baseFx
 let usdHolding=0;     // 달러 보유액 ($)
 let krwHolding=0;     // 원화 보유액 (₩)
@@ -1347,7 +1350,8 @@ function setStatus(m,err){const s=$('status');s.textContent=m;s.style.color=err?
 let lastBackup = null;    // ISO 문자열, 마지막 내보내기 시각
 let dirtySinceBackup = false;  // 백업 후 변경 있었는지
 function dataSnapshot(){
-  return {v:3, holdings, usdHolding, krwHolding, cashLog, baseFx, totalLocked, amtFixedUSD:true};
+  return {v:4, holdings, candidates, rejIntroDate,
+          usdHolding, krwHolding, cashLog, baseFx, totalLocked, amtFixedUSD:true};
 }
 function save(){
   try{
@@ -1387,8 +1391,11 @@ function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r
   }
   holdings.forEach(h=>{ if(!h.ledger) h.ledger=[]; if(!h.startQ) h.startQ=currentQGuess(); if(!h.ccy) h.ccy='KRW'; if(!h.fx) h.fx=(h.ccy==='USD'?1400:1);
     h.ledger.forEach(e=>{ if(e.fx===undefined) e.fx=(h.ccy==='USD'?h.fx:1); }); });
+  const mig = migrateCandidates(d, Date.now());
+  candidates = mig.candidates;
+  rejIntroDate = mig.rejIntroDate;
   lastBackup = d.lastBackup||null;
-  if(ver<2 || !d.amtFixedUSD) save(); // persist migration (만원 변환 또는 달러금액 교정)
+  if(ver<2 || !d.amtFixedUSD || mig.needsSave) save();
   dirtySinceBackup = false;   // 방금 로드 = 저장본과 동일 (마이그레이션 저장 후에도 초기화)
 }}catch(e){holdings=[];}}
 
