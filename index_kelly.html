@@ -1395,7 +1395,7 @@ function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r
   candidates = mig.candidates;
   rejIntroDate = mig.rejIntroDate;
   lastBackup = d.lastBackup||null;
-  if(ver<2 || !d.amtFixedUSD || mig.needsSave) save();
+  if(ver<2 || !d.amtFixedUSD || mig.needsSave) save(); // persist migration (금액 교정 또는 rejIntroDate 최초 기록)
   dirtySinceBackup = false;   // 방금 로드 = 저장본과 동일 (마이그레이션 저장 후에도 초기화)
 }}catch(e){holdings=[];}}
 
@@ -1446,6 +1446,8 @@ function importData(file){
     holdings.forEach(h=>{ h.ccy='USD'; h.fx=1; if(!h.ledger)h.ledger=[]; if(!h.startQ)h.startQ=currentQGuess(); });
     lastBackup=d.lastBackup||d.exportedAt||null;
     syncTotalFromFlows();
+    candidates = Array.isArray(d.candidates) ? d.candidates : [];
+    rejIntroDate = Number.isFinite(d.rejIntroDate) ? d.rejIntroDate : (rejIntroDate || Date.now());
     save(); dirtySinceBackup=false;
     // 입력칸 반영
     $('base-fx').value=commafy(baseFx);
