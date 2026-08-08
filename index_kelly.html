@@ -558,6 +558,49 @@
     <button class="btn ghost" id="pl-save-reject" style="width:100%;margin-top:8px;">바로 기각 등재</button>
   </div>
 </div>
+
+<!-- 기각 등재 모달 -->
+<div class="modal-bg" id="rjModal" style="display:none">
+  <div class="modal">
+    <div class="modal-head">
+      <span id="rj-title">기각 등재</span>
+      <span class="modal-x" id="rj-close">✕</span>
+    </div>
+    <div class="re-intro" id="rj-intro">기각 판단을 기록합니다. 3년 뒤 이 판단이 옳았는지 검증합니다.</div>
+    <div class="add-grid" style="grid-template-columns:1fr 1fr;margin-top:12px;">
+      <div class="fld"><label>기각일</label>
+        <input id="rj-date" type="date" style="font-family:var(--mono);"></div>
+      <div class="fld"><label>당시 주가 ($)</label><input id="rj-price" inputmode="decimal"></div>
+    </div>
+    <div class="fld" style="margin-top:10px;">
+      <label>기각 사유</label>
+      <select id="rj-reason" style="background:var(--panel-2);border:1px solid var(--line);
+        color:var(--ink);border-radius:8px;padding:9px;font-size:12.5px;">
+        <option value="factor">팩터 중복 (이미 뚫린 칸)</option>
+        <option value="circle">능력범위 밖</option>
+        <option value="premium">프리미엄 자격 미달</option>
+        <option value="valuation">밸류에이션</option>
+        <option value="abandoned">결론 보류·중단</option>
+      </select>
+    </div>
+    <div class="fld" style="margin-top:10px;">
+      <label>재검토 트리거 (필수 — 구체적 숫자로)</label>
+      <textarea id="rj-trigger" rows="2" placeholder="예: PBR 6배 이하로 오면 재검토"
+        style="background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+        border-radius:8px;padding:10px;font-size:12.5px;font-family:inherit;resize:vertical;"></textarea>
+    </div>
+    <div class="fld" style="margin-top:10px;">
+      <label>메모 (선택)</label>
+      <textarea id="rj-note" rows="2"
+        style="background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+        border-radius:8px;padding:10px;font-size:12.5px;font-family:inherit;resize:vertical;"></textarea>
+    </div>
+    <div class="keep-note" id="rj-locked" style="margin-top:10px;display:none;">
+      등재 14일이 지나 <b>기각일·주가·사유는 잠겼습니다.</b> 트리거와 메모만 수정됩니다.
+    </div>
+    <button class="btn primary" id="rj-save">기각 등재</button>
+  </div>
+</div>
 </div>
 
 <script>
@@ -1626,6 +1669,7 @@ function newCandidate(name){
 }
 $('pl-add').addEventListener('click', openAddCandidate);
 $('pl-close').addEventListener('click', ()=>{ $('plModal').style.display='none'; });
+$('plModal').addEventListener('click',e=>{if(e.target===$('plModal'))$('plModal').style.display='none';});
 $('pl-save-review').addEventListener('click', ()=>{
   const name=$('pl-name').value.trim();
   if(!name){ setStatus('종목명을 입력하세요',true); return; }
@@ -1645,7 +1689,94 @@ function bindPipeline(){
     candidates=candidates.filter(x=>x.id!==c.id);
     save(); render(); setStatus('삭제됨: '+c.name);
   }));
+  document.querySelectorAll('[data-plrej]').forEach(b=>b.addEventListener('click',()=>{
+    openRejectModal(b.dataset.plrej);
+  }));
+  document.querySelectorAll('[data-pledit]').forEach(b=>b.addEventListener('click',()=>{
+    openRejectModal(b.dataset.pledit);
+  }));
 }
+
+let rjCtx={cid:null, name:'', holdingId:null, editing:false, forceReason:null};
+
+function openRejectModal(cid, opts){
+  opts=opts||{};
+  const c = cid ? candidates.find(x=>x.id===cid) : null;
+  const editing = !!(c && c.status==='rejected');
+  const locked = editing && !isEditable(c, Date.now());
+  rjCtx={cid,
+         name: (c&&c.name) || opts.name || '',
+         holdingId: opts.holdingId || (c&&c.linkedHoldingId) || null,
+         editing,
+         forceReason: opts.reason || null};
+
+  $('rj-title').textContent = editing ? `${c.name} · 기각 기록 수정`
+                                      : `${rjCtx.name||'후보'} · 기각 등재`;
+  $('rj-date').value  = (c&&c.rejectedDate) || opts.date || todayStr();
+  $('rj-price').value = (c&&c.rejectPrice!=null?c.rejectPrice:(opts.price!=null?opts.price:''));
+  $('rj-reason').value= (c&&c.rejectReason) || opts.reason || 'factor';
+  $('rj-trigger').value=(c&&c.trigger) || '';
+  $('rj-note').value  = (c&&c.note) || '';
+
+  // thesis는 자동 등재 전용이라 드롭다운에 없다. 수정 모드에서만 임시 옵션으로 노출한다.
+  const sel=$('rj-reason');
+  const tmp=sel.querySelector('option[value="thesis"]');
+  if(tmp) tmp.remove();
+  if(c && c.rejectReason==='thesis'){
+    const o=document.createElement('option');
+    o.value='thesis'; o.textContent=REJECT_LABELS.thesis;
+    sel.appendChild(o); sel.value='thesis';
+  }
+
+  ['rj-date','rj-price','rj-reason'].forEach(id=>{ $(id).disabled=locked; });
+  $('rj-locked').style.display = locked ? 'block' : 'none';
+  $('rj-save').textContent = editing ? '수정 저장' : '기각 등재';
+  $('rjModal').style.display='flex';
+}
+
+$('rj-close').addEventListener('click', ()=>{ $('rjModal').style.display='none'; });
+$('rjModal').addEventListener('click',e=>{if(e.target===$('rjModal'))$('rjModal').style.display='none';});
+
+$('pl-save-reject').addEventListener('click', ()=>{
+  const name=$('pl-name').value.trim();
+  if(!name){ setStatus('종목명을 입력하세요',true); return; }
+  $('plModal').style.display='none';
+  openRejectModal(null, {name});
+});
+
+$('rj-save').addEventListener('click', ()=>{
+  const trigger=$('rj-trigger').value.trim();
+  if(!trigger){ setStatus('재검토 트리거를 적어주세요 — 없으면 3년 뒤 검증할 대상이 없습니다',true); return; }
+  let c = rjCtx.cid ? candidates.find(x=>x.id===rjCtx.cid) : null;
+  if(!c){
+    // 후보 객체는 여기서 만든다 — 모달을 열 때 만들면 닫았을 때 유령 검토중 항목이 남는다
+    if(!rjCtx.name){ setStatus('종목명이 없습니다',true); return; }
+    c = newCandidate(rjCtx.name);
+    rjCtx.cid = c.id;
+  }
+
+  const locked = rjCtx.editing && !isEditable(c, Date.now());
+  if(!locked){
+    const price=numVal('rj-price');
+    if(isNaN(price)||price<=0){ setStatus('당시 주가를 입력하세요',true); return; }
+    if(!$('rj-date').value){ setStatus('기각일을 입력하세요',true); return; }
+    c.rejectedDate=$('rj-date').value;
+    c.rejectPrice=price;
+    c.rejectReason = rjCtx.forceReason || $('rj-reason').value;   // thesis는 드롭다운에 없다
+  }
+  c.trigger=trigger;
+  c.note=$('rj-note').value.trim();
+  if(!rjCtx.editing){
+    c.status='rejected';
+    c.rejectedAt=Date.now();          // 유예·소급 판정의 유일한 기준
+    c.linkedHoldingId=rjCtx.holdingId;
+    c.verify=null;
+  }
+  save(); render();
+  $('rjModal').style.display='none';
+  setStatus((rjCtx.editing?'기각 기록 수정됨: ':'기각 등재됨: ')+c.name);
+});
+
 function renderBackupStatus(){
   const el=$('backup-status'); if(!el) return;
   const ago=fmtAgo(lastBackup);
