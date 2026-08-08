@@ -9,15 +9,27 @@
 
 ## 1단계 — 자동 검사 (30초)
 
-### 실행 순서
+### 실행 순서 — 터미널에 한 줄
 
-1. **로컬 파일을 연다.** 터미널에서 `open index_kelly.html`
-   (또는 Finder에서 더블클릭). 브랜치가 체크아웃돼 있으므로 이 파일이 새 버전이다.
-   배포본(`salt99.github.io`)은 아직 옛날 버전이니 그쪽을 열면 안 된다.
-2. **DevTools 콘솔을 연다.** `⌘ + ⌥ + J` (Chrome) 또는 `⌘ + ⌥ + C` → Console 탭.
-3. **`docs/superpowers/selfcheck-rejection-ledger.js` 파일 전체를 복사**해서 콘솔에 붙여넣고 엔터.
-   - Chrome이 처음엔 붙여넣기를 막는다. 그럼 콘솔에 `allow pasting` 이라고 **타이핑**한 뒤
-     엔터를 치고, 다시 붙여넣으면 된다.
+```sh
+node docs/superpowers/build-selfcheck.js && open _selfcheck.html
+```
+
+브라우저가 뜨면서 **결과가 화면에 바로 표시된다.** DevTools도, 복사·붙여넣기도 필요 없다.
+
+`_selfcheck.html` 은 `index_kelly.html` 사본에 검사 스크립트를 주입한 임시 파일이다.
+원본은 건드리지 않고, `.gitignore` 에 있으며, 확인이 끝나면 `rm _selfcheck.html` 로 지우면 된다.
+저장소 루트에 만드는 이유는 `file://` 오리진과 상대 경로를 원본과 똑같이 맞추기 위해서다.
+
+배포본(`salt99.github.io`)은 아직 옛날 버전이니 그쪽을 열면 안 된다.
+
+<details><summary>DevTools로 직접 돌리고 싶다면</summary>
+
+`open index_kelly.html` 후 `⌘ + ⌥ + J` 로 콘솔을 열고
+`docs/superpowers/selfcheck-rejection-ledger.js` 전체를 붙여넣는다.
+Chrome이 처음엔 붙여넣기를 막으므로, 콘솔에 `allow pasting` 을 **타이핑**하고
+엔터를 친 뒤 다시 붙여넣는다.
+</details>
 
 ### 실데이터로 볼지, 빈 상태로 볼지
 

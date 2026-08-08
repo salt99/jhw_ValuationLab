@@ -160,12 +160,46 @@
   }
 
   const fail = R.filter(r => !r.pass);
+  const skip = R.filter(r => r.pass && r.got.indexOf('건너뜀') === 0);
+
   console.table(R.map(r => ({ 항목: r.n, 결과: r.pass ? 'PASS' : 'FAIL', 실제: r.got })));
   console.log(
     '%c' + (fail.length ? `FAIL ${fail.length}건 / ${R.length}건` : `전부 통과 (${R.length}건)`),
     'font-size:15px;font-weight:bold;color:' + (fail.length ? '#e05252' : '#00d4a0')
   );
   if (fail.length) console.log('실패 항목:', fail.map(f => f.n));
-  console.log('%c데이터는 원상복구되었습니다. 남은 것은 눈으로 볼 항목뿐입니다 — 체크리스트 §시각 확인.',
-    'color:#8a93a5');
+
+  /* 화면에도 결과를 띄운다 — DevTools를 열지 않아도 보이도록 */
+  try {
+    const old = document.getElementById('selfcheck-panel');
+    if (old) old.remove();
+    const p = document.createElement('div');
+    p.id = 'selfcheck-panel';
+    p.style.cssText = 'position:fixed;inset:0;z-index:9999;overflow:auto;padding:24px 16px;' +
+      'background:#0c0e12;color:#e6e9ef;font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;';
+    const head = fail.length
+      ? '<div style="font-size:19px;font-weight:700;color:#e05252">FAIL ' + fail.length + '건 / 전체 ' + R.length + '건</div>'
+      : '<div style="font-size:19px;font-weight:700;color:#00d4a0">전부 통과 · ' + R.length + '건</div>';
+    const rows = R.map(function (r) {
+      const skipped = r.pass && r.got.indexOf('건너뜀') === 0;
+      const mark = skipped ? '<span style="color:#8a93a5">SKIP</span>'
+        : r.pass ? '<span style="color:#00d4a0">PASS</span>'
+                 : '<span style="color:#e05252;font-weight:700">FAIL</span>';
+      const detail = r.got ? '<span style="color:#8a93a5"> — ' + r.got + '</span>' : '';
+      return '<tr><td style="padding:3px 14px 3px 0;vertical-align:top">' + mark +
+             '</td><td style="padding:3px 0">' + r.n + detail + '</td></tr>';
+    }).join('');
+    p.innerHTML = head +
+      '<div style="color:#8a93a5;margin:6px 0 18px">데이터는 원상복구되었습니다. ' +
+      (skip.length ? 'SKIP ' + skip.length + '건은 이 오리진에 저장 데이터가 없어서입니다(정상). ' : '') +
+      '남은 것은 눈으로 볼 항목 — 체크리스트 2단계.</div>' +
+      '<table style="border-collapse:collapse">' + rows + '</table>' +
+      '<button id="selfcheck-close" style="margin-top:22px;padding:9px 16px;border:none;' +
+      'border-radius:9px;background:#00d4a0;color:#04140f;font-weight:600;cursor:pointer">' +
+      '닫고 도구 보기</button>';
+    document.body.appendChild(p);
+    document.getElementById('selfcheck-close').onclick = function () { p.remove(); };
+  } catch (e) {
+    console.warn('결과 패널을 그리지 못했습니다. 위 표를 보세요.', e);
+  }
 })();
