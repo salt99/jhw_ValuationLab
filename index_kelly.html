@@ -541,6 +541,23 @@
     <button class="btn primary" id="keep-save" style="margin-top:12px;">보유 유지 근거 저장</button>
   </div>
 </div>
+
+<!-- 후보 등록 모달 -->
+<div class="modal-bg" id="plModal" style="display:none">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <span>후보 등록</span>
+      <span class="modal-x" id="pl-close">✕</span>
+    </div>
+    <div class="fld" style="margin-top:12px;"><label>종목명</label><input class="txt" id="pl-name"></div>
+    <div class="keep-note" style="margin-top:10px;">
+      검토 시작일은 <b>등록 시각</b>으로 자동 기록됩니다. 과거 날짜는 입력하지 않습니다 —
+      기억으로 적은 날짜는 부정확하고 진척을 아는 상태에서 유리하게 적힐 수 있습니다.
+    </div>
+    <button class="btn primary" id="pl-save-review">검토중으로 등록</button>
+    <button class="btn ghost" id="pl-save-reject" style="width:100%;margin-top:8px;">바로 기각 등재</button>
+  </div>
+</div>
 </div>
 
 <script>
@@ -1593,6 +1610,41 @@ function renderPipeline(){
     recovered.forEach(c=>{ html+=rejectCard(c, now); });
   }
   $('pl-body').innerHTML=html;
+  bindPipeline();
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function openAddCandidate(){
+  $('pl-name').value='';
+  $('plModal').style.display='flex';
+  $('pl-name').focus();
+}
+function newCandidate(name){
+  const c={id:Date.now().toString(36), name, status:'reviewing', startDate:todayStr()};
+  candidates.push(c);
+  return c;
+}
+$('pl-add').addEventListener('click', openAddCandidate);
+$('pl-close').addEventListener('click', ()=>{ $('plModal').style.display='none'; });
+$('pl-save-review').addEventListener('click', ()=>{
+  const name=$('pl-name').value.trim();
+  if(!name){ setStatus('종목명을 입력하세요',true); return; }
+  newCandidate(name);
+  save(); render();
+  $('plModal').style.display='none';
+  setStatus('검토중 등록됨: '+name);
+});
+
+function bindPipeline(){
+  document.querySelectorAll('[data-pldel]').forEach(b=>b.addEventListener('click',()=>{
+    const c=candidates.find(x=>x.id===b.dataset.pldel); if(!c) return;
+    if(c.status==='rejected' && !isEditable(c, Date.now())){
+      setStatus('등재 14일이 지난 기각은 삭제할 수 없습니다',true); return;
+    }
+    if(!confirm(`${c.name} 항목을 삭제할까요?`)) return;
+    candidates=candidates.filter(x=>x.id!==c.id);
+    save(); render(); setStatus('삭제됨: '+c.name);
+  }));
 }
 function renderBackupStatus(){
   const el=$('backup-status'); if(!el) return;
