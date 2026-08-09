@@ -242,6 +242,27 @@
     ok('원본 없으면 모달 안 열림', $('histModal').style.display === 'none',
        $('histModal').style.display);
 
+    /* ---------- 14. 후보 등록 — 계기(origin) ----------
+       계기는 선택 입력이다. 비우면 필드를 만들지 않아야 기존 데이터와 모양이 같다. */
+    const cnt14 = candidates.length;
+    openAddCandidate();
+    $('pl-name').value = '__계기테스트';
+    $('pl-origin').value = '  창고형 리테일 해자  ';
+    $('pl-save-review').click();
+    const c14 = candidates[candidates.length - 1];
+    ok('계기가 trim 되어 저장된다', c14 && c14.origin === '창고형 리테일 해자',
+       c14 && c14.origin);
+    ok('후보가 1개 늘었다', candidates.length === cnt14 + 1,
+       cnt14 + ' → ' + candidates.length);
+
+    openAddCandidate();
+    ok('팝업을 다시 열면 계기 칸이 비어 있다', $('pl-origin').value === '',
+       $('pl-origin').value);
+    $('pl-name').value = '__계기없음';
+    $('pl-save-review').click();
+    const c14b = candidates[candidates.length - 1];
+    ok('계기를 비우면 필드를 만들지 않는다', !('origin' in c14b), JSON.stringify(c14b));
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
