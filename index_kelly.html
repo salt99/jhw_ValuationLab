@@ -1915,11 +1915,20 @@ function openRejectModal(cid, opts){
   if(rjCtx.forceReason) $('rj-reason').disabled = true;
   $('rj-locked').style.display = locked ? 'block' : 'none';
   $('rj-save').textContent = editing ? '수정 저장' : '기각 등재';
+  $('rj-close').style.display = rjIsForced() ? 'none' : '';
   $('rjModal').style.display='flex';
 }
 
-$('rj-close').addEventListener('click', ()=>{ $('rjModal').style.display='none'; });
-$('rjModal').addEventListener('click',e=>{if(e.target===$('rjModal'))$('rjModal').style.display='none';});
+/* thesis 자동 등재는 빠져나갈 수 없다 — 등재를 건너뛰면 청산 종목이 계획에서도
+   원장에서도 사라져 도달 불가가 된다. 수동 기각 모달은 그대로 닫힌다. (PRD §4 칸 회수 강제) */
+function rjIsForced(){ return rjCtx.forceReason==='thesis'; }
+$('rj-close').addEventListener('click', ()=>{
+  if(rjIsForced()){ setStatus('칸 회수는 등재해야 닫힙니다 — 재검토 트리거를 적으세요',true); return; }
+  $('rjModal').style.display='none';
+});
+$('rjModal').addEventListener('click',e=>{
+  if(e.target===$('rjModal') && !rjIsForced()) $('rjModal').style.display='none';
+});
 
 $('pl-save-reject').addEventListener('click', ()=>{
   const name=$('pl-name').value.trim();
