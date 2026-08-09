@@ -432,6 +432,31 @@
     const hNo = holdings[holdings.length - 1];
     ok('논지를 비우면 필드를 만들지 않는다', !('thesis' in hNo), JSON.stringify(hNo));
 
+    /* ---------- 19. 칸 회수 모달 — 원 논지 대조 ---------- */
+    const thId = '__t_thesis';
+    holdings.push({ id: thId, name:'__논지있음', price:100, up:200, down:50, prob:0.6,
+      startQ: currentQGuess(), ccy:'USD', fx:1, thesis:'창고형 리테일 해자', ledger:[] });
+    openRejectModal(null, { name:'__논지있음', reason:'thesis', price:100, holdingId: thId });
+    ok('원 논지가 모달에 표시된다',
+       $('rj-thesis').style.display !== 'none'
+       && $('rj-thesis').textContent.includes('창고형 리테일 해자'),
+       $('rj-thesis').textContent);
+    $('rjModal').style.display = 'none';
+
+    const noId = '__t_nothesis';
+    holdings.push({ id: noId, name:'__논지없음2', price:100, up:200, down:50, prob:0.6,
+      startQ: currentQGuess(), ccy:'USD', fx:1, ledger:[] });
+    openRejectModal(null, { name:'__논지없음2', reason:'thesis', price:100, holdingId: noId });
+    ok('논지가 없으면 그 줄이 안 뜬다', $('rj-thesis').style.display === 'none',
+       $('rj-thesis').style.display);
+    $('rjModal').style.display = 'none';
+
+    /* 수동 기각(보유 종목 없음)에서도 안 뜬다 */
+    openRejectModal(null, { name:'__수동' });
+    ok('수동 기각에는 원 논지 줄이 없다', $('rj-thesis').style.display === 'none',
+       $('rj-thesis').style.display);
+    $('rjModal').style.display = 'none';
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);

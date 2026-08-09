@@ -583,6 +583,7 @@
       <span class="modal-x" id="rj-close">✕</span>
     </div>
     <div class="re-intro" id="rj-intro">기각 판단을 기록합니다. 3년 뒤 이 판단이 옳았는지 검증합니다.</div>
+    <div class="keep-note" id="rj-thesis" style="margin-top:10px;display:none;"></div>
     <div class="add-grid" style="grid-template-columns:1fr 1fr;margin-top:12px;">
       <div class="fld"><label>기각일</label>
         <input id="rj-date" type="date" style="font-family:var(--mono);"></div>
@@ -2003,6 +2004,14 @@ function openRejectModal(cid, opts){
   if(rjCtx.forceReason) $('rj-reason').disabled = true;
   $('rj-locked').style.display = locked ? 'block' : 'none';
   $('rj-save').textContent = editing ? '수정 저장' : '기각 등재';
+  /* 원 논지 — 무엇이 깨졌는지 대조할 원문. 없는 종목은 줄 자체를 숨긴다. */
+  const th = rjCtx.holdingId ? (holdings.find(h=>h.id===rjCtx.holdingId)||{}).thesis : null;
+  if(th){
+    $('rj-thesis').innerHTML = `원 논지: <b>“${escapeHtml(th)}”</b>`;
+    $('rj-thesis').style.display = 'block';
+  } else {
+    $('rj-thesis').style.display = 'none';
+  }
   $('rj-close').style.display = rjIsForced() ? 'none' : '';
   $('rjModal').style.display='flex';
 }
