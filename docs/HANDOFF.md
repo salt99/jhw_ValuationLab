@@ -7,8 +7,13 @@
 
 ## 지금 상태
 
-TOOL 04에 후보 파이프라인(기각 원장)을 넣고 배포했다. `main` = `76c1b01`.
+TOOL 04에 후보 파이프라인(기각 원장)을 넣고 배포했다.
 라이브: `https://salt99.github.io/jhw_ValuationLab/index_kelly.html`
+
+이어서 SPIKE·DEVLOG·ADR·HANDOFF 규약을 도입했다 (CLAUDE.md §작업 기록).
+`SessionStart` 훅이 이 파일을 자동으로 읽어 들이고, `Stop` 훅이 이 파일이 뒤처지면
+세션당 한 번 알린다. **훅은 이 세션에서 새로 추가돼서 아직 실제 발화가 확인되지 않았다** —
+다음 세션 시작 시 이 문단이 컨텍스트에 들어와 있으면 `SessionStart` 훅이 동작하는 것이다.
 
 ## 진행 중 — 다음 세션이 이어받을 것
 
