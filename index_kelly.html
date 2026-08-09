@@ -348,6 +348,8 @@
   <h2>종목 추가</h2>
   <div class="add-grid">
     <div class="fld"><label>종목명</label><input class="txt" id="i-name" placeholder="예: 애플"></div>
+    <div class="fld"><label>논지 (선택)</label>
+      <input class="txt" id="i-thesis" placeholder="예: 창고형 리테일 해자"></div>
     <div class="fld"><label>현재가</label><input id="i-price" inputmode="decimal" placeholder="264"></div>
     <div class="fld"><label>상단목표</label><input id="i-up" inputmode="decimal" placeholder="400"></div>
     <div class="fld"><label>하단목표</label><input id="i-down" inputmode="decimal" placeholder="200"></div>
@@ -1129,7 +1131,10 @@ $('addBtn').addEventListener('click',()=>{
   // 달러 계좌면 종목도 달러 기준(fx=1, 금액이 곧 달러). 원화 계좌면 폼 통화 사용.
   const useCcy = baseCcy==='USD' ? 'USD' : newCcy;
   const fx = baseCcy==='USD' ? 1 : (newCcy==='USD' ? (numVal('i-fx')||1400) : 1);
-  holdings.push({id:Date.now().toString(36),name,price,up,down,prob,startQ,ccy:useCcy,fx,ledger:[]});
+  const h={id:Date.now().toString(36),name,price,up,down,prob,startQ,ccy:useCcy,fx,ledger:[]};
+  const th=$('i-thesis').value.trim();
+  if(th) h.thesis=th;        // 빈 값이면 필드를 만들지 않는다
+  holdings.push(h);
   if(pendingAdoptId){
     const pc=candidates.find(x=>x.id===pendingAdoptId);
     if(pc && pc.name===name) candidates=candidates.filter(x=>x.id!==pendingAdoptId);   // 제출된 종목이 대상 후보와 일치할 때만 제거
@@ -1137,6 +1142,7 @@ $('addBtn').addEventListener('click',()=>{
   }
   save();render();
   $('i-name').value='';$('i-price').value='';$('i-up').value='';$('i-down').value='';$('i-startq').value='';
+  $('i-thesis').value='';
   updatePreview();setStatus('추가됨: '+name);
 });
 
@@ -1952,6 +1958,7 @@ function bindPipeline(){
     const c=candidates.find(x=>x.id===b.dataset.pladopt); if(!c) return;
     pendingAdoptId=c.id;
     $('i-name').value=c.name;
+    $('i-thesis').value=c.origin||'';   // 초기값일 뿐 — 고치면 고친 값이 저장된다
     $('i-name').scrollIntoView({behavior:'smooth', block:'center'});
     $('i-price').focus();
     setStatus(`${c.name} 편입 — 가격·목표·승률을 입력하고 추가하세요`);

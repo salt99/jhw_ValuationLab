@@ -387,6 +387,51 @@
     ok('바로 기각으로 후보가 1개 늘었다', candidates.length === cnt17 + 1,
        cnt17 + ' → ' + candidates.length);
 
+    /* ---------- 18. 논지 승계 — 편입 · 직접 추가 ---------- */
+    candidates = [
+      { id:'ad1', name:'__편입테스트', status:'reviewing', startDate: iso(now - 3*D),
+        origin:'창고형 리테일 해자' }
+    ];
+    render();
+    document.querySelector('[data-pladopt="ad1"]').click();
+    ok('편입 시 논지가 폼에 자동으로 채워진다',
+       $('i-thesis').value === '창고형 리테일 해자', $('i-thesis').value);
+
+    const hBefore = holdings.length;
+    $('i-price').value = '100';
+    $('i-up').value    = '200';
+    $('i-down').value  = '50';
+    $('i-prob').value  = '60';
+    $('addBtn').click();
+    ok('보유 종목이 1개 늘었다', holdings.length === hBefore + 1,
+       hBefore + ' → ' + holdings.length);
+    const hNew = holdings[holdings.length - 1];
+    ok('논지가 holdings.thesis 로 들어간다', hNew.thesis === '창고형 리테일 해자',
+       hNew.thesis);
+    ok('폼 리셋으로 논지 칸이 비워진다', $('i-thesis').value === '', $('i-thesis').value);
+
+    /* 직접 추가 — 후보를 안 거쳐도 논지를 적을 수 있다 */
+    $('i-name').value   = '__직접추가';
+    $('i-thesis').value = '  생태계 잠금효과  ';
+    $('i-price').value  = '100';
+    $('i-up').value     = '200';
+    $('i-down').value   = '50';
+    $('i-prob').value   = '60';
+    $('addBtn').click();
+    const hDirect = holdings[holdings.length - 1];
+    ok('직접 추가도 논지가 trim 되어 저장된다', hDirect.thesis === '생태계 잠금효과',
+       hDirect.thesis);
+
+    /* 논지를 비우면 필드를 만들지 않는다 */
+    $('i-name').value  = '__논지없음';
+    $('i-price').value = '100';
+    $('i-up').value    = '200';
+    $('i-down').value  = '50';
+    $('i-prob').value  = '60';
+    $('addBtn').click();
+    const hNo = holdings[holdings.length - 1];
+    ok('논지를 비우면 필드를 만들지 않는다', !('thesis' in hNo), JSON.stringify(hNo));
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
