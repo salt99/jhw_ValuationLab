@@ -176,6 +176,72 @@
        afterA.pos.every(r => r.rel * afterA.equityScale >= (t0[r.h.id] || 0) - 1e-9), '줄어듦');
     ok('순매수 음수에서 진행 바가 0%', pctClamp(-0.25) === 0, String(pctClamp(-0.25)));
 
+    /* ---------- 12. 칸 회수 모달: 닫기 차단 ----------
+       칸 회수는 트리거를 적어야만 닫힌다. ✕ 숨김과 배경클릭 차단은 DOM 상태라
+       순수 함수 테스트로는 안 잡힌다. rjIsForced() 가 두 경로 모두를 막는지 본다. */
+    const cntBefore12 = candidates.length;
+    openRejectModal(null, { name: '__강제테스트', reason: 'thesis', price: 100 });
+    ok('강제 모달: ✕ 숨김', $('rj-close').style.display === 'none',
+       $('rj-close').style.display || '(보임)');
+    $('rjModal').click();                       // 배경 클릭 — target === rjModal
+    ok('강제 모달: 배경 클릭으로 안 닫힘', $('rjModal').style.display === 'flex',
+       $('rjModal').style.display);
+    $('rj-trigger').value = '';                 // 트리거 비움 → 저장 거부되어야 함
+    $('rj-save').click();
+    ok('강제 모달: 트리거 없으면 안 닫힘', $('rjModal').style.display === 'flex',
+       $('rjModal').style.display);
+    ok('저장 거부 시 후보 미생성', candidates.length === cntBefore12,
+       cntBefore12 + ' → ' + candidates.length);
+    $('rjModal').style.display = 'none';
+
+    /* 회귀: 수동 기각 모달은 여전히 닫힌다. 강제 차단이 전 경로로 새면 안 된다. */
+    openRejectModal(null, { name: '__일반테스트' });
+    ok('일반 모달: ✕ 보임', $('rj-close').style.display !== 'none', 'none');
+    $('rjModal').click();
+    ok('일반 모달: 배경 클릭으로 닫힘', $('rjModal').style.display === 'none',
+       $('rjModal').style.display);
+
+    /* ---------- 13. 매매 이력 모달 (읽기 전용) ----------
+       청산 종목은 계획에서 사라지므로 원장을 볼 곳이 여기뿐이다.
+       11번이 만들어 둔 __t_dead(매수 1·매도 1)와 그 칸 회수 등재를 그대로 쓴다. */
+    render();
+    const histBtn = document.querySelector('[data-plhist="' + deadId + '"]');
+    ok('칸 회수 카드에 매매 이력 버튼', !!histBtn, '없음');
+    const rejCard = [...document.querySelectorAll('#pl-body .pl-item')]
+      .find(e => e.textContent.includes('CCC기각'));
+    ok('기각 카드에는 매매 이력 버튼 없음',
+       !!rejCard && !rejCard.querySelector('[data-plhist]'), rejCard ? '있음' : '카드 못 찾음');
+
+    if (histBtn) {
+      histBtn.click();
+      ok('매매 이력 모달 열림', $('histModal').style.display === 'flex',
+         $('histModal').style.display);
+      ok('제목이 종목명으로 채워짐', $('hist-title').textContent.indexOf('__TEST_DEAD') === 0,
+         $('hist-title').textContent);
+      const entries = document.querySelectorAll('#hist-body .lg-entry').length;
+      ok('원장 2건 렌더 (매수·매도)', entries === 2, entries);
+      ok('요약에 매수 1회 · 매도 1회',
+         /매수\s*1회/.test($('hist-sum').textContent) && /매도\s*1회/.test($('hist-sum').textContent),
+         $('hist-sum').textContent);
+      ok('매도 사유가 보인다', $('hist-body').textContent.indexOf('매도사유') !== -1,
+         $('hist-body').textContent.slice(0, 60));
+      /* 읽기 전용이 의도다 (PRD §7-D18). 편집 요소가 생기면 여기서 걸린다. */
+      const edits = $('histModal').querySelectorAll('input,select,textarea,button').length;
+      ok('읽기 전용 — 편집 요소 없음', edits === 0, edits);
+
+      $('histModal').click();                   // 강제가 아니므로 배경 클릭으로 닫힌다
+      ok('배경 클릭으로 닫힘', $('histModal').style.display === 'none',
+         $('histModal').style.display);
+      histBtn.click();
+      $('hist-close').click();
+      ok('✕로 닫힘', $('histModal').style.display === 'none', $('histModal').style.display);
+    }
+
+    /* 원본 종목이 없으면 (백업 편집 등으로 끊긴 링크) 모달을 열지 않고 안내만 한다 */
+    openHistModal('__존재하지않는id');
+    ok('원본 없으면 모달 안 열림', $('histModal').style.display === 'none',
+       $('histModal').style.display);
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
