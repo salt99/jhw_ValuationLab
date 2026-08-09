@@ -3,12 +3,12 @@
 > 세션을 끝낼 때 이 파일을 **덮어쓴다.** 다음 세션은 이것부터 읽는다.
 > 파일은 항상 하나다 — 지난 내용은 `git log docs/HANDOFF.md` 에 남는다.
 
-**갱신**: 2026-08-09 · **브랜치**: `main` · **푸시 안 됨 (로컬 커밋 8개 대기)**
+**갱신**: 2026-08-09 · **브랜치**: `main` · **배포됨 (`9c9396e`)**
 
 ## 지금 상태
 
-**푸시하지 않았다.** 배포본(`salt99.github.io`)은 아직 이전 버전이고, 폰에 있는 앱도
-그대로다. 로컬 `main`이 `origin/main`(`632dc07`)보다 8커밋 앞서 있다.
+**푸시했다.** `632dc07..9c9396e`. 10분 내 폰(홈 화면 웹앱)에 반영된다.
+라이브: `https://salt99.github.io/jhw_ValuationLab/index_kelly.html`
 
 논지 훼손 청산 종목이 계획에서 안 빠지던 버그를 고쳤다. 설계는
 `docs/superpowers/specs/2026-08-09-liquidated-holding-design.md`,
@@ -29,8 +29,9 @@
 
 ## 진행 중 — 다음 세션이 이어받을 것
 
-**브라우저 실기 검증을 아직 못 했다.** 직전 세션은 폰에서 원격 터미널로만 접속해
-Mac 브라우저를 볼 수 없었다.
+**브라우저 실기 검증을 아직 못 했다. 검증 전에 배포됐다** — 사용자가 폰에서 직접
+확인하기로 판단했다. 직전 세션은 폰에서 원격 터미널로만 접속해 Mac 브라우저를
+볼 수 없었다.
 
 - 끝남: `node test_pipeline.js` — 56 pass. 배분 수식은 손계산과 대조까지 마쳤다
 - 끝남: 구문 파싱 · DOM id 참조 무결성
@@ -63,16 +64,10 @@ Mac 브라우저를 볼 수 없었다.
 
 ## 되돌리는 법
 
-**아직 푸시 안 했으므로** 로컬에서 지우면 끝이다:
+이미 배포됐으므로 revert 후 push한다:
 
 ```sh
-git reset --hard origin/main     # 로컬 6커밋 폐기
-```
-
-이미 푸시한 뒤라면:
-
-```sh
-git revert --no-commit 632dc07..HEAD && git commit -m "revert: roll back liquidated holding exclusion" && git push
+git revert --no-commit 632dc07..9c9396e && git commit -m "revert: roll back liquidated holding exclusion" && git push
 ```
 
 → 10분 내 폰 반영. **저장 포맷을 바꾸지 않았으므로 데이터 손실이 없다.**
