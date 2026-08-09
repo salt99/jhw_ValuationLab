@@ -184,6 +184,11 @@
     white-space:nowrap;}
   .pl-meta{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:5px;}
   .pl-trigger{font-size:11px;color:var(--ink);margin-top:5px;line-height:1.5;}
+  .pl-origin{font-size:11px;color:var(--dim);margin-top:5px;line-height:1.5;font-style:italic;}
+  .pl-stage{display:flex;gap:10px;margin-top:7px;flex-wrap:wrap;}
+  .pl-stage label{display:flex;align-items:center;gap:4px;font-size:11px;
+    color:var(--dim);cursor:pointer;}
+  .pl-stage input{accent-color:var(--accent);margin:0;}
   .pl-badge{display:inline-block;font-size:10px;padding:1px 7px;border-radius:999px;
     border:1px solid var(--line);color:var(--faint);font-family:var(--mono);}
   .pl-badge.due{border-color:var(--warn);color:var(--warn);}
@@ -1778,12 +1783,18 @@ function renderPipeline(){
     html+=`<div class="pl-group">▸ 검토중 (오래된 순)</div>`;
     reviewing.forEach(c=>{
       const days=Math.floor((now-Date.parse(c.startDate))/864e5);
+      const st=stageOf(c);
+      const box=(k,label)=>`<label><input type="checkbox" data-plstage="${c.id}" `
+        +`data-k="${k}"${st[k]?' checked':''}>${label}</label>`;
       html+=`<div class="pl-item">
         <div class="pl-top"><span class="pl-name">${escapeHtml(c.name)}</span>
           <span class="pl-date">${days}일 · ${escapeHtml(c.startDate||'')}</span></div>
+        ${c.origin?`<div class="pl-origin">“${escapeHtml(c.origin)}”</div>`:''}
+        <div class="pl-stage">${box('circle','능력범위')}${box('premium','프리미엄')}${box('val','밸류에이션')}</div>
         <div class="pl-act">
           <button class="btn ghost" data-plrej="${c.id}">기각</button>
           <button class="btn ghost" data-pladopt="${c.id}">편입</button>
+          <button class="btn ghost" data-plmemo="${c.id}">✎ 메모</button>
           <button class="btn ghost" data-pldel="${c.id}">삭제</button>
         </div></div>`;
     });
@@ -1886,6 +1897,12 @@ function bindPipeline(){
   }));
   document.querySelectorAll('[data-plhist]').forEach(b=>b.addEventListener('click',()=>{
     openHistModal(b.dataset.plhist);
+  }));
+  document.querySelectorAll('[data-plstage]').forEach(b=>b.addEventListener('change',()=>{
+    const c=candidates.find(x=>x.id===b.dataset.plstage); if(!c) return;
+    c.stage=stageOf(c);                 // 없으면 세 키를 채워서 만든다
+    c.stage[b.dataset.k]=b.checked;
+    save();   // render()는 부르지 않는다 — 목록을 다시 그리면 모바일에서 스크롤이 튄다
   }));
   document.querySelectorAll('[data-pladopt]').forEach(b=>b.addEventListener('click',()=>{
     const c=candidates.find(x=>x.id===b.dataset.pladopt); if(!c) return;

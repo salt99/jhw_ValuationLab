@@ -263,6 +263,48 @@
     const c14b = candidates[candidates.length - 1];
     ok('계기를 비우면 필드를 만들지 않는다', !('origin' in c14b), JSON.stringify(c14b));
 
+    /* ---------- 15. 검토중 카드 — 계기 표시 · 진행 체크 ---------- */
+    candidates = [
+      { id:'sg1', name:'AAA진행', status:'reviewing', startDate: iso(now - 30*D),
+        origin:'창고형 리테일 해자', stage:{circle:true, premium:false, val:false} },
+      { id:'sg2', name:'BBB무계기', status:'reviewing', startDate: iso(now - 10*D) }
+    ];
+    render();
+
+    const card1 = [...document.querySelectorAll('#pl-body .pl-item')]
+      .find(e => e.textContent.includes('AAA진행'));
+    ok('계기가 카드에 렌더된다',
+       !!card1 && !!card1.querySelector('.pl-origin')
+       && card1.querySelector('.pl-origin').textContent.includes('창고형 리테일 해자'),
+       card1 ? card1.textContent.slice(0, 60) : '카드 없음');
+
+    const card2 = [...document.querySelectorAll('#pl-body .pl-item')]
+      .find(e => e.textContent.includes('BBB무계기'));
+    ok('계기가 없으면 그 줄이 없다',
+       !!card2 && !card2.querySelector('.pl-origin'), '있음');
+
+    const boxes = card1.querySelectorAll('[data-plstage="sg1"]');
+    ok('체크박스 3개', boxes.length === 3, boxes.length);
+    const circle = card1.querySelector('[data-plstage="sg1"][data-k="circle"]');
+    const val    = card1.querySelector('[data-plstage="sg1"][data-k="val"]');
+    ok('저장된 체크가 반영된다', circle.checked === true && val.checked === false,
+       'circle=' + circle.checked + ' val=' + val.checked);
+
+    val.checked = true;
+    val.dispatchEvent(new Event('change', {bubbles:true}));
+    ok('토글이 stage에 반영된다',
+       candidates.find(c => c.id === 'sg1').stage.val === true,
+       JSON.stringify(candidates.find(c => c.id === 'sg1').stage));
+    ok('토글해도 다른 체크는 그대로',
+       candidates.find(c => c.id === 'sg1').stage.circle === true, 'circle 꺼짐');
+
+    const box2 = card2.querySelector('[data-plstage="sg2"][data-k="premium"]');
+    box2.checked = true;
+    box2.dispatchEvent(new Event('change', {bubbles:true}));
+    ok('stage 없던 후보도 토글되면 생긴다',
+       candidates.find(c => c.id === 'sg2').stage.premium === true,
+       JSON.stringify(candidates.find(c => c.id === 'sg2').stage));
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
