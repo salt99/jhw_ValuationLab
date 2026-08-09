@@ -866,7 +866,7 @@ function refKRW(usd){ return baseCcy==='USD' ? `≈ ₩${Math.round(usd*baseFx).
 
 /* engine: positive kelly -> normalize -> ×Half = equity target; rest = bonds */
 function compute(){
-  const rows=holdings.map(h=>({h,k:kellyOf(h)}));
+  const rows=livePlanHoldings(holdings,candidates).map(h=>({h,k:kellyOf(h)}));
   const pos=rows.filter(r=>r.k.f&&r.k.f>0);
   const posSum=pos.reduce((s,r)=>s+r.k.f,0);
   // 정규화: rel = f / 합 (주식 배분 내 상대비중, 합=1)
@@ -1237,7 +1237,7 @@ function render(){
         const st=ledgerStats(h);
         const sched=scheduleWithLog(h);
         const targetLabel=totalCapital>0?fmtMoney(targetAmt):fmtPct(w);
-        const investedPct = targetAmt>0 ? Math.min(100, st.netInvested/targetAmt*100) : 0;
+        const investedPct = targetAmt>0 ? pctClamp(st.netInvested/targetAmt*100) : 0;
         const posLine = totalCapital>0
           ? `순매수 ${fmtMoney(st.netInvested)} / 목표 ${targetLabel} (${investedPct.toFixed(0)}%)`
           : `목표 비중 ${targetLabel}`;

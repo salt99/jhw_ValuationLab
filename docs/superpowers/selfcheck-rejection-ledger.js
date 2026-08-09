@@ -7,6 +7,7 @@
   const KEY = 'kelly2y';
   const RAW = localStorage.getItem(KEY);
   const BK_CANDS = JSON.parse(JSON.stringify(candidates));
+  const BK_HOLDS = JSON.parse(JSON.stringify(holdings));
   const BK_INTRO = rejIntroDate;
   const realConfirm = window.confirm;
 
@@ -148,12 +149,40 @@
     ok('thesis일 때 사유 변경 불가', $('rj-reason').disabled, 'enabled');
     $('rjModal').style.display = 'none';
 
+    /* ---------- 11. 청산 종목 계획 제외 ----------
+       kellyOf()는 원장을 보지 않으므로, 전량 청산해도 켈리가 양수면 계획에 남는다.
+       칸 회수 등재가 그 종목을 계획에서 빼는지를 등재 전후로 직접 비교한다. */
+    const deadId = '__t_dead';
+    holdings.push({ id: deadId, name: '__TEST_DEAD', price: 100, up: 200, down: 50, prob: 0.6,
+      startQ: currentQGuess(), ccy: 'USD', fx: 1,
+      ledger: [{ type: 'buy',  shares: 3, price: 100, amount: 300, quarter: currentQGuess() },
+               { type: 'sell', shares: 3, price: 110, amount: 330, sellReason: 'thesis',
+                 quarter: currentQGuess() }] });
+    const beforeA = compute();
+    const t0 = {};
+    beforeA.pos.forEach(r => { t0[r.h.id] = r.rel * beforeA.equityScale; });
+    ok('등재 전에는 계획에 남아 있다 (켈리 양수)',
+       beforeA.pos.some(r => r.h.id === deadId), '이미 빠져 있음');
+    candidates.push({ id: '__t_c', name: '__TEST_DEAD', status: 'rejected', rejectReason: 'thesis',
+      linkedHoldingId: deadId, rejectedAt: now, rejectedDate: iso(now), startDate: iso(now),
+      trigger: 't', note: '', verify: null });
+    const afterA = compute();
+    ok('칸 회수 등재 후 rows에서 빠진다',
+       afterA.rows.every(r => r.h.id !== deadId), '남아있음');
+    ok('칸 회수 등재 후 pos에서 빠진다',
+       afterA.pos.every(r => r.h.id !== deadId), '남아있음');
+    /* posSum≥1이면 커지고 posSum<1이면 그대로다. 단언은 "줄지 않는다"여야 한다. */
+    ok('남은 종목 목표가 줄지 않는다',
+       afterA.pos.every(r => r.rel * afterA.equityScale >= (t0[r.h.id] || 0) - 1e-9), '줄어듦');
+    ok('순매수 음수에서 진행 바가 0%', pctClamp(-0.25) === 0, String(pctClamp(-0.25)));
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
   } finally {
     window.confirm = realConfirm;
     candidates = BK_CANDS;
+    holdings = BK_HOLDS;
     rejIntroDate = BK_INTRO;
     if (RAW !== null) localStorage.setItem(KEY, RAW); else localStorage.removeItem(KEY);
     try { render(); } catch (e) {}
