@@ -341,6 +341,52 @@
     ok('배경 클릭으로 닫힌다', $('memoModal').style.display === 'none',
        $('memoModal').style.display);
 
+    /* ---------- 17. 기각 — 계기는 남고 작업 기억은 버린다 (§7-D19) ---------- */
+    candidates = [
+      { id:'rv1', name:'RRR기각', status:'reviewing', startDate: iso(now - 20*D),
+        origin:'원 계기', stage:{circle:true, premium:true, val:false}, reviewNote:'작업 메모' }
+    ];
+    render();
+    document.querySelector('[data-plrej="rv1"]').click();
+    $('rj-price').value   = '100';
+    $('rj-trigger').value = '트리거';
+    $('rj-save').click();
+    const rv = candidates.find(c => c.id === 'rv1');
+    ok('기각 후 계기는 남는다', rv.origin === '원 계기', rv.origin);
+    ok('기각 후 stage는 지워진다', rv.stage === undefined, JSON.stringify(rv.stage));
+    ok('기각 후 reviewNote는 지워진다', rv.reviewNote === undefined, rv.reviewNote);
+    ok('기각 카드에 계기가 보인다',
+       $('pl-body').textContent.includes('원 계기'), $('pl-body').textContent.slice(0,80));
+    const rvCard = [...document.querySelectorAll('#pl-body .pl-item')]
+      .find(e => e.textContent.includes('RRR기각'));
+    ok('기각 카드에는 체크박스가 없다',
+       !!rvCard && !rvCard.querySelector('[data-plstage]'), '있음');
+
+    /* 기각 기록 수정은 아무것도 지우지 않는다 */
+    rv.stage = {circle:true, premium:false, val:false};
+    rv.reviewNote = '수정 테스트';
+    document.querySelector('[data-pledit="rv1"]').click();
+    $('rj-trigger').value = '트리거 수정';
+    $('rj-save').click();
+    const rv2 = candidates.find(c => c.id === 'rv1');
+    ok('수정 시 stage를 지우지 않는다', !!rv2.stage && rv2.stage.circle === true,
+       JSON.stringify(rv2.stage));
+    ok('수정 시 reviewNote를 지우지 않는다', rv2.reviewNote === '수정 테스트', rv2.reviewNote);
+
+    /* 바로 기각 등재 경로도 계기를 넘긴다 */
+    const cnt17 = candidates.length;
+    openAddCandidate();
+    $('pl-name').value   = '__바로기각';
+    $('pl-origin').value = '바로 계기';
+    $('pl-save-reject').click();
+    $('rj-price').value   = '50';
+    $('rj-trigger').value = '트리거';
+    $('rj-save').click();
+    const dr = candidates[candidates.length - 1];
+    ok('바로 기각 등재도 계기를 넘긴다', dr.origin === '바로 계기', dr.origin);
+    ok('바로 기각으로 후보가 1개 늘었다', candidates.length === cnt17 + 1,
+       cnt17 + ' → ' + candidates.length);
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
