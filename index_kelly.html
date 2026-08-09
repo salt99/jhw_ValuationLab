@@ -37,10 +37,15 @@
   .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;}
   .card h2{font-size:13px;margin:0 0 10px;color:var(--accent);font-weight:600;}
 
-  .fld{display:flex;flex-direction:column;gap:4px;}
+  /* min-width:0 — 그리드 아이템 기본값 auto는 콘텐츠 최소 너비 밑으로 못 줄어든다.
+     date 입력은 네이티브 컨트롤이라 그 값이 커서 옆 칸을 침범한다. */
+  .fld{display:flex;flex-direction:column;gap:4px;min-width:0;}
   .fld label{font-size:10px;color:var(--faint);}
   .fld input{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
-    border-radius:8px;padding:9px 9px;font-size:13px;font-family:var(--mono);width:100%;}
+    border-radius:8px;padding:9px 9px;font-size:13px;font-family:var(--mono);width:100%;
+    min-width:0;max-width:100%;}
+  /* iOS Safari는 date 입력의 고유 너비를 우선해 width:100%를 무시한다 */
+  .fld input[type="date"]{-webkit-appearance:none;appearance:none;}
   .fld input.txt{font-family:inherit;}
   .add-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:7px;align-items:end;}
   .prob-row{display:flex;align-items:center;gap:10px;margin-top:12px;}
