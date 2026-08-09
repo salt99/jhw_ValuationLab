@@ -6,7 +6,8 @@ const m = src.match(/\/\* ===== PIPELINE PURE =====[\s\S]*?\/\* ===== \/PIPELINE
 if (!m) { console.error('PIPELINE PURE 블록을 찾지 못했습니다'); process.exit(1); }
 const api = new Function(m[0] + `
   return {GRACE_MS, VERIFY_DAYS, isEditable, isSeeded, verifyDaysLeft, rejectionStats, migrateCandidates,
-          isThesisBroken, isThesisReject, livePlanHoldings, pctClamp, needsPunchBack};
+          isThesisBroken, isThesisReject, livePlanHoldings, pctClamp, needsPunchBack,
+          stageOf, stripReviewFields};
 `)();
 
 /* compute()는 PURE 블록 밖에 있고 holdings/candidates를 전역으로 읽는다. 배분 수식도
@@ -232,6 +233,40 @@ grp('compute — 전부 청산');
   eq('pos 비었다', r.pos.length, 0);
   eq('equityScale 0', r.equityScale, 0);
   eq('cashWeight 1', r.cashWeight, 1);
+}
+
+/* ---- stageOf ---- */
+grp('stageOf (검토 진행 체크)');
+{
+  eq('stage 없으면 전부 false', api.stageOf({}), {circle:false, premium:false, val:false});
+  eq('부분 지정은 나머지 false', api.stageOf({stage:{circle:true}}),
+     {circle:true, premium:false, val:false});
+  eq('truthy를 불리언으로 정규화', api.stageOf({stage:{circle:1, premium:'y', val:0}}),
+     {circle:true, premium:true, val:false});
+  const src0 = {stage:{circle:true}};
+  const out = api.stageOf(src0);
+  out.circle = false;
+  eq('원본을 변형하지 않는다 (새 객체)', src0.stage.circle, true);
+}
+
+/* ---- stripReviewFields ---- */
+grp('stripReviewFields (기각 시 작업 기억 폐기)');
+{
+  const c = {id:'a', name:'X', origin:'해자', stage:{circle:true}, reviewNote:'메모'};
+  api.stripReviewFields(c, false);
+  eq('stage 삭제', c.stage, undefined);
+  eq('reviewNote 삭제', c.reviewNote, undefined);
+  eq('origin 유지', c.origin, '해자');
+  eq('name 유지', c.name, 'X');
+
+  const d = {id:'b', origin:'해자', stage:{circle:true}, reviewNote:'메모'};
+  api.stripReviewFields(d, true);
+  eq('수정(editing)이면 stage 유지', d.stage, {circle:true});
+  eq('수정(editing)이면 reviewNote 유지', d.reviewNote, '메모');
+
+  const e = {id:'c', origin:'해자'};
+  api.stripReviewFields(e, false);
+  eq('없는 필드를 지워도 안전하다', e, {id:'c', origin:'해자'});
 }
 
 console.log('\n' + (fail ? `FAILED  ${pass} pass / ${fail} fail` : `OK  ${pass} pass`));

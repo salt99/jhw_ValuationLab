@@ -734,6 +734,20 @@ function needsPunchBack(h, candidates){
   if(!isThesisBroken(sells[sells.length-1].sellReason)) return false;
   return !(candidates||[]).some(c=>isThesisReject(c,h.id));
 }
+
+/* 검토 진행 체크 — 없거나 부분적이어도 세 키를 채워 돌려준다.
+   렌더와 토글 핸들러가 같은 모양을 보게 하려고 한 곳에 모았다. */
+function stageOf(c){
+  const s=(c&&c.stage)||{};
+  return {circle:!!s.circle, premium:!!s.premium, val:!!s.val};
+}
+
+/* 기각 등재 시 검토용 작업 기억을 버린다(PRD §7-D19). 편입 때 버리는 것과 대칭이다.
+   기존 기각 기록을 수정할 때는 애초에 이 필드들이 없으므로 건드리지 않는다. */
+function stripReviewFields(c, editing){
+  if(!editing){ delete c.stage; delete c.reviewNote; }
+  return c;
+}
 /* ===== /PIPELINE PURE ===== */
 
 const KEY='kelly2y';
