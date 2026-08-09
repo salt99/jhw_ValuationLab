@@ -1292,6 +1292,15 @@ function render(){
         const keepList=(h.ledger||[]).filter(e=>e.type==='keep');
         const lastKeep=keepList.length?keepList[keepList.length-1]:null;
         const keptRecently = lastKeep && (!lastReassess || (lastKeep.date||'')>=(lastReassess.date||''));
+        /* 칸 회수 모달을 닫아 등재를 건너뛴 기존 데이터. 조용히 등재하지 않고 사용자가 누르게 한다. */
+        const punchWarn = needsPunchBack(h, candidates)
+          ? `<div class="inactive-banner">⚠ 논지 훼손 전량매도 · <b>칸 회수 미등재</b>
+               <div class="inactive-act">
+                 <button class="btn ghost sm" data-punch="${h.id}">등재하기</button>
+               </div>
+               <div class="inactive-advice">등재해야 기각 원장에 남고 계획에서 빠집니다.</div>
+             </div>`
+          : '';
         let inactiveBanner='';
         if(isInactive){
           const causeStr = thesisWorsened
@@ -1347,7 +1356,7 @@ function render(){
           <div class="tl-hold-sub">${h.startQ} 시작 · 현재가 ${_sym}${fmtNum(h.price)} · 하단 ▼${_sym}${fmtNum(h.down)}${sharesLine}${sellFlag}</div>
           <div class="exec-track"><div class="exec-track-fill" style="width:${investedPct}%"></div></div>
           ${isExpanded ? `
-          ${inactiveBanner}
+          ${punchWarn}${inactiveBanner}
           ${paceLine}
           ${(()=>{
             // 순서 강제 (실적일 기준): 첫 매수는 자유. 이후 분기는 그 분기 실적발표일이 지나야 열림.
@@ -1495,6 +1504,18 @@ function render(){
   }));
   body.querySelectorAll('[data-iakeep]').forEach(b=>b.addEventListener('click',()=>{
     openKeepModal(b.dataset.iakeep);
+  }));
+  body.querySelectorAll('[data-punch]').forEach(b=>b.addEventListener('click',()=>{
+    const h=holdings.find(x=>x.id===b.dataset.punch);
+    if(!h) return;
+    const sells=(h.ledger||[]).filter(x=>x.type==='sell');
+    const last=sells[sells.length-1]||{};
+    openRejectModal(null,{name:h.name, price:last.price, date:last.date||todayStr(),
+                          reason:'thesis', holdingId:h.id});
+    $('rj-title').textContent=`${h.name} · 칸 회수`;
+    $('rj-intro').textContent=
+      'thesis 파기로 청산했습니다. 기각 원장에 등재됩니다. 재진입은 새 1칸입니다.';
+    $('rj-reason').disabled=true;   // 사유는 rjCtx.forceReason='thesis'로 고정
   }));
   body.querySelectorAll('[data-lgadd]').forEach(b=>b.addEventListener('click',()=>{
     const [hid,qkey]=b.dataset.lgadd.split(':'); openLogModal(hid,qkey);
