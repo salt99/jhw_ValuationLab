@@ -305,6 +305,42 @@
        candidates.find(c => c.id === 'sg2').stage.premium === true,
        JSON.stringify(candidates.find(c => c.id === 'sg2').stage));
 
+    /* ---------- 16. 메모 모달 — 계기·작업 메모 편집 ---------- */
+    candidates = [
+      { id:'mm1', name:'MMM메모', status:'reviewing', startDate: iso(now - 5*D),
+        origin:'원래 계기', reviewNote:'원래 메모' }
+    ];
+    render();
+    document.querySelector('[data-plmemo="mm1"]').click();
+    ok('메모 모달이 열린다', $('memoModal').style.display === 'flex',
+       $('memoModal').style.display);
+    ok('계기가 채워져 있다', $('mm-origin').value === '원래 계기', $('mm-origin').value);
+    ok('메모가 채워져 있다', $('mm-note').value === '원래 메모', $('mm-note').value);
+
+    $('mm-origin').value = '  고친 계기  ';
+    $('mm-note').value   = '  고친 메모  ';
+    $('mm-save').click();
+    const mm = candidates.find(c => c.id === 'mm1');
+    ok('계기가 trim 되어 저장된다', mm.origin === '고친 계기', mm.origin);
+    ok('메모가 trim 되어 저장된다', mm.reviewNote === '고친 메모', mm.reviewNote);
+    ok('저장하면 모달이 닫힌다', $('memoModal').style.display === 'none',
+       $('memoModal').style.display);
+    ok('카드에 고친 계기가 반영된다',
+       $('pl-body').textContent.includes('고친 계기'), $('pl-body').textContent.slice(0,60));
+
+    document.querySelector('[data-plmemo="mm1"]').click();
+    $('mm-origin').value = '';
+    $('mm-note').value   = '';
+    $('mm-save').click();
+    const mm2 = candidates.find(c => c.id === 'mm1');
+    ok('비우면 origin 필드를 지운다', !('origin' in mm2), JSON.stringify(mm2));
+    ok('비우면 reviewNote 필드를 지운다', !('reviewNote' in mm2), JSON.stringify(mm2));
+
+    document.querySelector('[data-plmemo="mm1"]').click();
+    $('memoModal').click();      // 배경 클릭 — 강제가 아니므로 닫힌다
+    ok('배경 클릭으로 닫힌다', $('memoModal').style.display === 'none',
+       $('memoModal').style.display);
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);

@@ -631,6 +631,21 @@
   </div>
 </div>
 
+<!-- 검토 메모 모달 — 계기와 작업 메모. 작업 기억이라 잠금이 없다(PRD §7-D19) -->
+<div class="modal-bg" id="memoModal" style="display:none">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <span id="mm-title">검토 메모</span>
+      <span class="modal-x" id="mm-close">✕</span>
+    </div>
+    <div class="fld" style="margin-top:12px;"><label>왜 보나</label>
+      <input class="txt" id="mm-origin" placeholder="예: 창고형 리테일 해자"></div>
+    <div class="fld" style="margin-top:10px;"><label>메모</label>
+      <textarea id="mm-note" rows="3" placeholder="예: 10-K 3장까지 읽음"></textarea></div>
+    <button class="btn primary" id="mm-save">저장</button>
+  </div>
+</div>
+
 <!-- 3년 검증 모달 -->
 <div class="modal-bg" id="vfModal" style="display:none">
   <div class="modal" style="max-width:400px;">
@@ -1876,6 +1891,31 @@ function openHistModal(holdingId){
 $('hist-close').addEventListener('click',()=>{ $('histModal').style.display='none'; });
 $('histModal').addEventListener('click',e=>{ if(e.target===$('histModal'))$('histModal').style.display='none'; });
 
+/* 검토 메모 — 계기와 작업 메모를 함께 고친다. 편입되면 계기만 h.thesis로 넘어간다. */
+let memoCid=null;
+function openMemoModal(cid){
+  const c=candidates.find(x=>x.id===cid); if(!c) return;
+  memoCid=cid;
+  $('mm-title').textContent=`${c.name} · 검토 메모`;
+  $('mm-origin').value=c.origin||'';
+  $('mm-note').value=c.reviewNote||'';
+  $('memoModal').style.display='flex';
+}
+$('mm-close').addEventListener('click',()=>{ $('memoModal').style.display='none'; });
+$('memoModal').addEventListener('click',e=>{
+  if(e.target===$('memoModal')) $('memoModal').style.display='none';
+});
+$('mm-save').addEventListener('click',()=>{
+  const c=candidates.find(x=>x.id===memoCid); if(!c) return;
+  const o=$('mm-origin').value.trim();
+  const n=$('mm-note').value.trim();
+  if(o) c.origin=o; else delete c.origin;          // 빈 값은 필드를 지운다
+  if(n) c.reviewNote=n; else delete c.reviewNote;
+  save(); render();
+  $('memoModal').style.display='none';
+  setStatus('검토 메모 저장됨: '+c.name);
+});
+
 function bindPipeline(){
   document.querySelectorAll('[data-pldel]').forEach(b=>b.addEventListener('click',()=>{
     const c=candidates.find(x=>x.id===b.dataset.pldel); if(!c) return;
@@ -1903,6 +1943,9 @@ function bindPipeline(){
     c.stage=stageOf(c);                 // 없으면 세 키를 채워서 만든다
     c.stage[b.dataset.k]=b.checked;
     save();   // render()는 부르지 않는다 — 목록을 다시 그리면 모바일에서 스크롤이 튄다
+  }));
+  document.querySelectorAll('[data-plmemo]').forEach(b=>b.addEventListener('click',()=>{
+    openMemoModal(b.dataset.plmemo);
   }));
   document.querySelectorAll('[data-pladopt]').forEach(b=>b.addEventListener('click',()=>{
     const c=candidates.find(x=>x.id===b.dataset.pladopt); if(!c) return;
