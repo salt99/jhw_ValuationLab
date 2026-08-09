@@ -5,7 +5,8 @@ const src = fs.readFileSync(__dirname + '/index_kelly.html', 'utf8');
 const m = src.match(/\/\* ===== PIPELINE PURE =====[\s\S]*?\/\* ===== \/PIPELINE PURE ===== \*\//);
 if (!m) { console.error('PIPELINE PURE 블록을 찾지 못했습니다'); process.exit(1); }
 const api = new Function(m[0] + `
-  return {GRACE_MS, VERIFY_DAYS, isEditable, isSeeded, verifyDaysLeft, rejectionStats, migrateCandidates};
+  return {GRACE_MS, VERIFY_DAYS, isEditable, isSeeded, verifyDaysLeft, rejectionStats, migrateCandidates,
+          isThesisBroken, isThesisReject, livePlanHoldings, pctClamp, needsPunchBack};
 `)();
 
 let pass = 0, fail = 0;
@@ -100,6 +101,46 @@ grp('migrateCandidates');
   eq('기존 candidates는 그대로 보존',
      api.migrateCandidates({rejIntroDate: INTRO, candidates:[{name:'A'}]}, NOW).candidates,
      [{name:'A'}]);
+}
+
+/* ---- 청산 종목 계획 제외 ---- */
+grp('livePlanHoldings');
+{
+  const H_LIVE = {id:'h1', ledger:[{type:'buy',shares:3}]};
+  const H_DEAD = {id:'h2', ledger:[{type:'buy',shares:3},{type:'sell',shares:3,sellReason:'thesis'}]};
+  const C_PUNCH = {status:'rejected', rejectReason:'thesis', linkedHoldingId:'h2'};
+  const C_PLAIN = {status:'rejected', rejectReason:'valuation', linkedHoldingId:null};
+
+  eq('칸 회수 등재된 종목은 계획에서 빠진다',
+     api.livePlanHoldings([H_LIVE,H_DEAD],[C_PUNCH]).map(h=>h.id), ['h1']);
+  eq('일반 기각은 종목을 빼지 않는다',
+     api.livePlanHoldings([H_LIVE,H_DEAD],[C_PLAIN]).map(h=>h.id), ['h1','h2']);
+  eq('칸 회수를 삭제하면 종목이 계획으로 복귀한다',
+     api.livePlanHoldings([H_LIVE,H_DEAD],[]).map(h=>h.id), ['h1','h2']);
+  eq('다른 종목의 칸 회수는 영향이 없다',
+     api.livePlanHoldings([H_LIVE,H_DEAD],
+       [{status:'rejected',rejectReason:'thesis',linkedHoldingId:'zzz'}]).map(h=>h.id), ['h1','h2']);
+  eq('후보가 비어도 안전하다', api.livePlanHoldings([H_LIVE],null).map(h=>h.id), ['h1']);
+  eq('종목이 비어도 안전하다', api.livePlanHoldings(null,[C_PUNCH]), []);
+  eq('모든 종목이 청산되면 빈 배열',
+     api.livePlanHoldings([H_DEAD],[C_PUNCH]), []);
+
+  grp('pctClamp');
+  eq('음수 퍼센트는 0으로 클램프', api.pctClamp(-0.25), 0);
+  eq('100 초과는 100으로 클램프', api.pctClamp(140), 100);
+  eq('정상값은 그대로', api.pctClamp(37.5), 37.5);
+  eq('NaN은 0으로', api.pctClamp(NaN), 0);
+
+  grp('needsPunchBack');
+  eq('논지 훼손 전량매도 + 미등재 = 배너 대상', api.needsPunchBack(H_DEAD, []), true);
+  eq('이미 등재됐으면 배너 대상 아님', api.needsPunchBack(H_DEAD, [C_PUNCH]), false);
+  eq('보유가 남아 있으면 배너 대상 아님',
+     api.needsPunchBack({id:'h3', ledger:[{type:'buy',shares:5},{type:'sell',shares:2,sellReason:'thesis'}]}, []), false);
+  eq('목표가 도달 매도는 배너 대상 아님',
+     api.needsPunchBack({id:'h4', ledger:[{type:'buy',shares:3},{type:'sell',shares:3,sellReason:'target'}]}, []), false);
+  eq('criteria 사유도 논지 훼손형이다',
+     api.needsPunchBack({id:'h5', ledger:[{type:'buy',shares:3},{type:'sell',shares:3,sellReason:'criteria'}]}, []), true);
+  eq('매도 이력이 없으면 배너 대상 아님', api.needsPunchBack(H_LIVE, []), false);
 }
 
 console.log('\n' + (fail ? `FAILED  ${pass} pass / ${fail} fail` : `OK  ${pass} pass`));

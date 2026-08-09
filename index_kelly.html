@@ -689,6 +689,34 @@ function migrateCandidates(d, nowMs){
     needsSave: !had
   };
 }
+/* 논지 훼손형 매도 사유 판정 — updateSellGuide()의 UI 안내와 lm-save의 칸 회수 자동등재가 공유한다 */
+function isThesisBroken(r){ return r==='thesis'||r==='criteria'||r==='better'; }
+/* 이 후보가 해당 종목의 칸 회수 등재인가. thesisRejectOf와 livePlanHoldings가 공유한다. */
+function isThesisReject(c, holdingId){
+  return !!c && c.status==='rejected' && c.rejectReason==='thesis' && c.linkedHoldingId===holdingId;
+}
+/* 계획(목표 배분·매매일지) 대상 종목. 칸 회수된 종목은 보유가 없으므로 계획에서 뺀다.
+   kellyOf()는 원장을 보지 않아 전량 청산해도 켈리가 양수로 남는다 — 그래서 여기서 걸러야 한다.
+   holdings 배열 자체는 건드리지 않는다: 회고용 원장이 남아야 한다. */
+function livePlanHoldings(holdings, candidates){
+  const cs = candidates||[];
+  return (holdings||[]).filter(h=>!cs.some(c=>isThesisReject(c,h.id)));
+}
+/* 진행 바 폭. 음수를 그대로 넘기면 width:-0.25% 가 무효 CSS라 선언이 버려지고,
+   .exec-track-fill 에 기본 width가 없어 100%로 렌더된다. 아래쪽도 반드시 자른다. */
+function pctClamp(x){ return Number.isFinite(x) ? Math.max(0, Math.min(100, x)) : 0; }
+/* 논지 훼손 전량매도인데 칸 회수 미등재 — 자동 등재하지 않고 배너로 유도한다.
+   조용히 데이터를 바꾸는 것보다 사용자가 누르게 하는 편이 안전하다. */
+function needsPunchBack(h, candidates){
+  const L = (h&&h.ledger)||[];
+  const sells = L.filter(e=>e.type==='sell');
+  if(!sells.length) return false;
+  const bought = L.filter(e=>e.type==='buy').reduce((s,e)=>s+(e.shares||0),0);
+  const sold = sells.reduce((s,e)=>s+(e.shares||0),0);
+  if(bought-sold > 0) return false;
+  if(!isThesisBroken(sells[sells.length-1].sellReason)) return false;
+  return !(candidates||[]).some(c=>isThesisReject(c,h.id));
+}
 /* ===== /PIPELINE PURE ===== */
 
 const KEY='kelly2y';
@@ -1071,8 +1099,6 @@ const SELL_REASONS={
   rebal:'비중 조절 / 리밸런싱',
   target:'상단 목표가 도달',
 };
-// 논지 훼손형 사유 판정 — updateSellGuide()의 UI 안내와 lm-save의 칸 회수 자동등재가 공유한다
-function isThesisBroken(r){ return r==='thesis'||r==='criteria'||r==='better'; }
 
 /* 8-quarter tranche schedule for one holding */
 /* 8-quarter schedule: each quarter earnings report = a checkpoint.
@@ -1664,8 +1690,7 @@ function rejectCard(c, now){
 
 function normName(s){ return (s||'').replace(/\s+/g,'').toLowerCase(); }
 function thesisRejectOf(holdingId){
-  return candidates.find(c=>c.status==='rejected' && c.rejectReason==='thesis'
-                           && c.linkedHoldingId===holdingId);
+  return candidates.find(c=>isThesisReject(c,holdingId));
 }
 function thesisRejectByName(name){
   const n=normName(name);
