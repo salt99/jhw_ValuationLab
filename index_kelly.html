@@ -203,6 +203,8 @@
   .lg-entry.keep{border-color:rgba(106,159,232,.3);}
   .tranche-dot.keep{border-color:var(--cash);color:var(--cash);}
   .keep-note{font-size:10.5px;color:var(--faint);margin-top:10px;line-height:1.5;}
+  .hist-sum{font-size:12px;color:var(--dim);font-family:var(--mono);margin:2px 0 10px;}
+  .hist-q{font-size:11px;color:var(--faint);margin:10px 0 4px;font-family:var(--mono);}
   .keep-note b{color:var(--dim);}
   .lg-meta{font-size:10.5px;color:var(--dim);}
   .lg-del{color:var(--faint);cursor:pointer;font-size:12px;padding:0 4px;}
@@ -604,6 +606,21 @@
       등재 14일이 지나 <b>기각일·주가·사유는 잠겼습니다.</b> 트리거와 메모만 수정됩니다.
     </div>
     <button class="btn primary" id="rj-save">기각 등재</button>
+  </div>
+</div>
+
+<!-- 매매 이력 모달 (읽기 전용) — 청산 종목은 계획에서 사라지므로 여기서만 회고한다 -->
+<div class="modal-bg" id="histModal" style="display:none">
+  <div class="modal">
+    <div class="modal-head">
+      <span id="hist-title">매매 이력</span>
+      <span class="modal-x" id="hist-close">✕</span>
+    </div>
+    <div class="hist-sum" id="hist-sum"></div>
+    <div id="hist-body"></div>
+    <div class="keep-note">
+      읽기 전용입니다. 기록을 고치려면 백업을 내보내 JSON을 편집한 뒤 가져오세요.
+    </div>
   </div>
 </div>
 
@@ -1681,6 +1698,7 @@ function rejectCard(c, now){
     <div class="pl-badges">${vBadge}${seeded}</div>
     <div class="pl-act">
       ${vAct}
+      ${c.linkedHoldingId?`<button class="btn ghost" data-plhist="${c.linkedHoldingId}">매매 이력</button>`:''}
       <button class="btn ghost" data-pledit="${c.id}">✎ ${editable?'수정':'트리거·메모'}</button>
       ${editable?`<button class="btn ghost" data-pldel="${c.id}">삭제</button>`:''}
     </div>
@@ -1769,6 +1787,44 @@ $('pl-save-review').addEventListener('click', ()=>{
   setStatus('검토중 등록됨: '+name);
 });
 
+/* 청산 종목의 매매 이력 — 읽기 전용. 8분기 트랜치 UI는 쓰지 않는다:
+   청산된 포지션에 "이번 분기 열림" 같은 계획 표시는 의미가 없다. */
+function openHistModal(holdingId){
+  const h=holdings.find(x=>x.id===holdingId);
+  if(!h){ setStatus('원본 종목 기록을 찾지 못했습니다',true); return; }
+  const st=ledgerStats(h);
+  $('hist-title').textContent=`${h.name} · 매매 이력`;
+  $('hist-sum').textContent=
+    `매수 ${st.buyCount}회 ${fmtMoney(st.buyAmt)} · 매도 ${st.sellCount}회 ${fmtMoney(st.sellAmt)}`;
+  const L=h.ledger||[];
+  if(!L.length){ $('hist-body').innerHTML='<div class="empty">기록이 없습니다.</div>'; }
+  else {
+    const byQ={};
+    L.forEach(e=>{ const k=e.quarter||'—'; (byQ[k]=byQ[k]||[]).push(e); });
+    $('hist-body').innerHTML=Object.keys(byQ).map(q=>{
+      const rows=byQ[q].map(e=>{
+        const badge = e.type==='buy'?'<span class="lg-badge buy">매수</span>'
+                    : e.type==='sell'?'<span class="lg-badge sell">매도</span>'
+                    : e.type==='reassess'?'<span class="lg-badge hold">재평가</span>'
+                    : '<span class="lg-badge hold">보류</span>';
+        const pxStr=e.price?` @$${fmtNum(e.price)}`:'';
+        const shStr=e.shares?` · ${e.shares.toLocaleString('ko-KR')}주`:'';
+        const amtStr=e.amount?` · ${fmtMoney(e.amount)}`:'';
+        const sr=e.sellReason?`<div class="lg-sellreason">매도사유: ${SELL_REASONS[e.sellReason]||e.sellReason}</div>`:'';
+        return `<div class="lg-entry">
+          <div class="lg-top">${badge}<span class="lg-meta mono">${escapeHtml(e.date||'')}${pxStr}${shStr}${amtStr}</span></div>
+          ${e.reason?`<div class="lg-reason">${escapeHtml(e.reason)}</div>`:''}
+          ${sr}
+        </div>`;
+      }).join('');
+      return `<div class="hist-q">${escapeHtml(q)}</div>${rows}`;
+    }).join('');
+  }
+  $('histModal').style.display='flex';
+}
+$('hist-close').addEventListener('click',()=>{ $('histModal').style.display='none'; });
+$('histModal').addEventListener('click',e=>{ if(e.target===$('histModal'))$('histModal').style.display='none'; });
+
 function bindPipeline(){
   document.querySelectorAll('[data-pldel]').forEach(b=>b.addEventListener('click',()=>{
     const c=candidates.find(x=>x.id===b.dataset.pldel); if(!c) return;
@@ -1787,6 +1843,9 @@ function bindPipeline(){
   }));
   document.querySelectorAll('[data-plvf]').forEach(b=>b.addEventListener('click',()=>{
     openVerifyModal(b.dataset.plvf);
+  }));
+  document.querySelectorAll('[data-plhist]').forEach(b=>b.addEventListener('click',()=>{
+    openHistModal(b.dataset.plhist);
   }));
   document.querySelectorAll('[data-pladopt]').forEach(b=>b.addEventListener('click',()=>{
     const c=candidates.find(x=>x.id===b.dataset.pladopt); if(!c) return;
