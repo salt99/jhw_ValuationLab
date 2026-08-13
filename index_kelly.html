@@ -192,6 +192,7 @@
   .prob-in{width:64px;margin-left:8px;background:var(--panel-2);border:1px solid var(--line);
     color:var(--ink);border-radius:8px;padding:9px;font-size:13px;
     font-family:var(--mono);text-align:right;}
+  .hold-nobase{font-size:11px;color:var(--warn);margin-top:6px;line-height:1.5;}
   .re-sum{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:6px;text-align:right;}
   .pl-badge{display:inline-block;font-size:10px;padding:1px 7px;border-radius:999px;
     border:1px solid var(--line);color:var(--faint);font-family:var(--mono);}
@@ -1310,6 +1311,10 @@ function render(){
       const w=(!invalid&&k.f>0)?r.rel*equityScale:0;
       const amt=totalCapital>0?w*totalCapital:0;
       const kellyStr=invalid?k.err:fmtPct(k.f,1);
+      // Base 미입력 종목 안내 (기능 도입 전 보유분 등) — 켈리 문구는 위에 이미 뜨므로 행동만 안내
+      const noBase = k.err==='Base 미입력 — 켈리 보류'
+        ? `<div class="hold-nobase">⚠ <b>✎ 수정</b>에서 Base 목표가와 세 확률을 채우세요</div>`
+        : '';
       // 하방 시나리오 비현실적 경고 (하단이 현재가 −10% 이내)
       const thinWarn = (!invalid && k.thinDown)
         ? `<div class="thin-warn">⚠ 하단 ${ccySym(ccyOf(h))}${fmtNum(h.down)}가 현재가의 −${((1-h.down/h.price)*100).toFixed(0)}% — 하방이 비현실적으로 얕아 켈리가 과대평가됩니다. 실제 최악의 하락(−20~40%)을 반영하세요.</div>`
@@ -1336,6 +1341,7 @@ function render(){
           </div>
         </div>
         ${(w>0&&totalCapital>0)?`<div class="hold-kelly" style="color:var(--accent)">목표 금액 ${fmtMoney(amt)}${baseCcy==='USD'?` <span class="krw-ref">${refKRW(amt)}</span>`:''}</div>`:''}
+        ${noBase}
         ${thinWarn}
         ${reLine}
       </div>`;

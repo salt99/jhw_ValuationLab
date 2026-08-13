@@ -343,5 +343,34 @@ grp('kellyOf — thinDown 은 가장 나쁜 시나리오 기준');
   eq('얕은 하방의 f 가 폭발한다', Math.round(shallow.f), 23);
 }
 
+/* ---- compute — Base 미입력 종목은 배분에서 빠진다 ---- */
+grp('compute — Base 미입력 회귀');
+{
+  const full={id:'F',name:'채움',price:100,up:150,base:120,down:70,prob:0.25,pBase:0.5,
+              startQ:'2026Q1',ccy:'USD',fx:1,ledger:[]};
+  const bare={id:'B',name:'빔',price:100,up:150,down:70,prob:0.55,
+              startQ:'2026Q1',ccy:'USD',fx:1,ledger:[]};   // base 없음
+  alloc.setState([full,bare],[]);
+  const r=alloc.compute();
+  eq('rows 에는 둘 다 있다', r.rows.length, 2);
+  eq('pos 에는 채운 종목만', r.pos.map(x=>x.h.id), ['F']);
+  eq('빈 종목의 err 가 붙는다', r.rows.find(x=>x.h.id==='B').k.err, 'Base 미입력 — 켈리 보류');
+
+  // §7-D18 의 희석 버그와 같은 형태: 계산 불가 종목이 posSum 에 끼면 안 된다
+  const withBare=alloc.compute();
+  const tW=withBare.pos.find(x=>x.h.id==='F');
+  alloc.setState([full],[]);
+  const alone=alloc.compute();
+  const tA=alone.pos.find(x=>x.h.id==='F');
+  eq('Base 없는 종목이 살아있는 종목을 희석하지 않는다',
+     Math.abs(tW.rel*withBare.equityScale - tA.rel*alone.equityScale) < 1e-9, true);
+
+  alloc.setState([bare],[]);
+  const only=alloc.compute();
+  eq('전부 미입력이면 pos 가 빈다', only.pos.length, 0);
+  eq('전부 미입력이면 equityScale 0', only.equityScale, 0);
+  eq('전부 미입력이면 현금 100%', only.cashWeight, 1);
+}
+
 console.log('\n' + (fail ? `FAILED  ${pass} pass / ${fail} fail` : `OK  ${pass} pass`));
 process.exit(fail ? 1 : 0);

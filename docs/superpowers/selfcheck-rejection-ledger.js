@@ -582,6 +582,21 @@
     ok('수정도 순서 위반을 막는다', holdings.find(h=>h.id===eid).base === 120,
        holdings.find(h=>h.id===eid).base);
 
+    /* ---------- 23. Base 미입력 배너 ---------- */
+    holdings = [
+      {id:'nb1',name:'__배너대상',price:100,up:150,down:70,prob:0.55,
+       startQ:currentQGuess(),ccy:'USD',fx:1,ledger:[]},
+      {id:'nb2',name:'__정상',price:100,up:150,base:120,down:70,prob:0.25,pBase:0.5,
+       startQ:currentQGuess(),ccy:'USD',fx:1,ledger:[]}
+    ];
+    viewMode='alloc';   // 배너는 목표 배분 분기에서만 렌더된다 — 앞 섹션이 바꿨을 수 있다
+    render();
+    const banners=[...document.querySelectorAll('.hold-nobase')];
+    ok('Base 미입력 종목에 배너가 뜬다', banners.length === 1, banners.length);
+    ok('배너 문구에 수정 안내가 있다',
+       banners.length === 1 && banners[0].textContent.includes('수정'),
+       banners.length ? banners[0].textContent : '배너 없음');
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
