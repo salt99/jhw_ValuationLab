@@ -553,6 +553,35 @@
     ok('재평가도 순서 위반을 막는다', holdings.find(h=>h.id===rid).base === 130,
        holdings.find(h=>h.id===rid).base);
 
+    /* ---------- 22. 수정(✎) — 마이그레이션으로 Base 를 처음 채우는 경로 ---------- */
+    const eid='__t_edit';
+    holdings.push({id:eid,name:'__수정테스트',price:100,up:150,down:70,prob:0.55,
+      startQ:currentQGuess(),ccy:'USD',fx:1,ledger:[]});   // v4 모양 — base·pBase 없음
+    render();
+    ok('Base 없는 종목은 켈리가 보류된다', kellyOf(holdings.find(h=>h.id===eid)).f === null,
+       String(kellyOf(holdings.find(h=>h.id===eid)).f));
+
+    openEditModal(eid);
+    ok('수정 모달의 Base 칸이 비어 있다', $('em-base').value === '', $('em-base').value);
+    $('em-base').value  = '120';
+    $('em-prob').value  = '25';
+    $('em-pbase').value = '50';
+    $('em-pbear').value = '25';
+    $('em-save').click();
+    const eh = holdings.find(h=>h.id===eid);
+    ok('수정으로 Base 가 채워진다', eh.base === 120, eh.base);
+    ok('수정으로 pBase 가 채워진다', Math.abs(eh.pBase - 0.5) < 1e-9, eh.pBase);
+    ok('수정은 원장에 이력을 남기지 않는다', (eh.ledger||[]).length === 0,
+       (eh.ledger||[]).length);
+    ok('채운 뒤 켈리가 계산된다', kellyOf(eh).f !== null, 'null');
+
+    /* 검증은 수정 경로에도 걸린다 */
+    openEditModal(eid);
+    $('em-base').value  = '60';
+    $('em-save').click();
+    ok('수정도 순서 위반을 막는다', holdings.find(h=>h.id===eid).base === 120,
+       holdings.find(h=>h.id===eid).base);
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
