@@ -836,6 +836,7 @@ function emProbSum(){
   if(!name){ setStatus('종목명을 입력하세요',true); return; }
   if(isNaN(price)||isNaN(up)||isNaN(down)||isNaN(base)){ setStatus('가격·세 시나리오를 모두 입력하세요',true); return; }
   if(price<=0){ setStatus('현재가는 0보다 커야 합니다',true); return; }
+  if(up<=0||down<=0||base<=0){ setStatus('목표가는 0보다 커야 합니다',true); return; }
   if(isNaN(pb)||isNaN(pm)||isNaN(pw)){ setStatus('세 확률을 입력하세요',true); return; }
   if(pb<0||pm<0||pw<0){ setStatus('확률은 0% 이상이어야 합니다',true); return; }
   if(Math.abs(pb+pm+pw-100)>1e-9){ setStatus('확률 합을 100%로 맞추세요',true); return; }
@@ -855,7 +856,7 @@ Expected: PASS — `전부 통과 · 124건` (117 + 신규 7).
 
 ```bash
 git add index_kelly.html docs/superpowers/selfcheck-rejection-ledger.js
-git commit -m "feat(kelly): fill base via edit modal without ledger entry"
+git commit -m "feat(kelly): edit base without a ledger entry"
 ```
 
 본문:
