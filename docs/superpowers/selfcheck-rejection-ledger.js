@@ -400,8 +400,11 @@
     const hBefore = holdings.length;
     $('i-price').value = '100';
     $('i-up').value    = '200';
+    $('i-base').value  = '120';
     $('i-down').value  = '50';
     $('i-prob').value  = '60';
+    $('i-pbase').value = '25';
+    $('i-pbear').value = '15';
     $('addBtn').click();
     ok('보유 종목이 1개 늘었다', holdings.length === hBefore + 1,
        hBefore + ' → ' + holdings.length);
@@ -415,8 +418,11 @@
     $('i-thesis').value = '  생태계 잠금효과  ';
     $('i-price').value  = '100';
     $('i-up').value     = '200';
+    $('i-base').value   = '120';
     $('i-down').value   = '50';
     $('i-prob').value   = '60';
+    $('i-pbase').value  = '25';
+    $('i-pbear').value  = '15';
     $('addBtn').click();
     const hDirect = holdings[holdings.length - 1];
     ok('직접 추가도 논지가 trim 되어 저장된다', hDirect.thesis === '생태계 잠금효과',
@@ -426,8 +432,11 @@
     $('i-name').value  = '__논지없음';
     $('i-price').value = '100';
     $('i-up').value    = '200';
+    $('i-base').value  = '120';
     $('i-down').value  = '50';
     $('i-prob').value  = '60';
+    $('i-pbase').value = '25';
+    $('i-pbear').value = '15';
     $('addBtn').click();
     const hNo = holdings[holdings.length - 1];
     ok('논지를 비우면 필드를 만들지 않는다', !('thesis' in hNo), JSON.stringify(hNo));
@@ -456,6 +465,60 @@
     ok('수동 기각에는 원 논지 줄이 없다', $('rj-thesis').style.display === 'none',
        $('rj-thesis').style.display);
     $('rjModal').style.display = 'none';
+
+    /* ---------- 20. 종목 추가 — 3-시나리오 입력 ---------- */
+    const hBefore20 = holdings.length;
+    $('i-name').value   = '__3시나리오';
+    $('i-price').value  = '100';
+    $('i-up').value     = '150';
+    $('i-base').value   = '120';
+    $('i-down').value   = '70';
+    $('i-prob').value   = '25';
+    $('i-pbase').value  = '50';
+    $('i-pbear').value  = '25';
+    $('addBtn').click();
+    ok('3-시나리오 종목이 추가된다', holdings.length === hBefore20 + 1,
+       hBefore20 + ' → ' + holdings.length);
+    const h20 = holdings[holdings.length - 1];
+    ok('base 가 저장된다', h20.base === 120, h20.base);
+    ok('pBase 가 0~1 로 저장된다', Math.abs(h20.pBase - 0.5) < 1e-9, h20.pBase);
+    ok('pBear 는 저장하지 않는다', !('pBear' in h20), JSON.stringify(h20));
+    ok('prob 은 Bull 확률', Math.abs(h20.prob - 0.25) < 1e-9, h20.prob);
+
+    /* 확률 합이 100 이 아니면 저장 거부 */
+    const hCnt = holdings.length;
+    $('i-name').value  = '__합틀림';
+    $('i-price').value = '100'; $('i-up').value = '150';
+    $('i-base').value  = '120'; $('i-down').value = '70';
+    $('i-prob').value  = '25'; $('i-pbase').value = '50'; $('i-pbear').value = '30';
+    $('addBtn').click();
+    ok('확률 합 ≠ 100 이면 저장 거부', holdings.length === hCnt,
+       hCnt + ' → ' + holdings.length);
+
+    /* 합이 100 이어도 개별 음수는 거부 */
+    $('i-prob').value  = '150'; $('i-pbase').value = '-50'; $('i-pbear').value = '0';
+    $('addBtn').click();
+    ok('개별 확률이 음수면 저장 거부', holdings.length === hCnt,
+       hCnt + ' → ' + holdings.length);
+    $('i-prob').value  = '25'; $('i-pbase').value = '50'; $('i-pbear').value = '25';
+
+    /* 순서 위반이면 저장 거부 */
+    $('i-name').value  = '__순서틀림';
+    $('i-base').value  = '60';          // 하단 70 보다 낮다
+    $('i-pbear').value = '25';
+    $('addBtn').click();
+    ok('Bull ≥ Base ≥ Bear 위반 시 저장 거부', holdings.length === hCnt,
+       hCnt + ' → ' + holdings.length);
+
+    /* 폼 리셋 */
+    $('i-name').value  = '__리셋확인';
+    $('i-base').value  = '120';
+    $('addBtn').click();
+    ok('폼 리셋으로 Base 칸이 비워진다', $('i-base').value === '', $('i-base').value);
+    ok('폼 리셋으로 Base 확률 칸이 비워진다', $('i-pbase').value === '', $('i-pbase').value);
+
+    /* 스냅샷 버전 */
+    ok('스냅샷이 v5', dataSnapshot().v === 5, dataSnapshot().v);
 
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });

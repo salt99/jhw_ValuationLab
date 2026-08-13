@@ -189,6 +189,10 @@
   .pl-stage label{display:flex;align-items:center;gap:4px;font-size:11px;
     color:var(--dim);cursor:pointer;}
   .pl-stage input{accent-color:var(--accent);margin:0;}
+  .prob-in{width:64px;margin-left:8px;background:var(--panel-2);border:1px solid var(--line);
+    color:var(--ink);border-radius:8px;padding:9px;font-size:13px;
+    font-family:var(--mono);text-align:right;}
+  .re-sum{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:6px;text-align:right;}
   .pl-badge{display:inline-block;font-size:10px;padding:1px 7px;border-radius:999px;
     border:1px solid var(--line);color:var(--faint);font-family:var(--mono);}
   .pl-badge.due{border-color:var(--warn);color:var(--warn);}
@@ -351,13 +355,15 @@
     <div class="fld"><label>논지 (선택)</label>
       <input class="txt" id="i-thesis" placeholder="예: 창고형 리테일 해자"></div>
     <div class="fld"><label>현재가</label><input id="i-price" inputmode="decimal" placeholder="264"></div>
-    <div class="fld"><label>상단목표</label><input id="i-up" inputmode="decimal" placeholder="400"></div>
-    <div class="fld"><label>하단목표</label><input id="i-down" inputmode="decimal" placeholder="200"></div>
+    <div class="fld"><label>상단 Bull</label><input id="i-up" inputmode="decimal" placeholder="400">
+      <input type="number" id="i-prob" min="0" max="100" step="1" placeholder="25" class="prob-in"></div>
+    <div class="fld"><label>Base</label><input id="i-base" inputmode="decimal" placeholder="300">
+      <input type="number" id="i-pbase" min="0" max="100" step="1" placeholder="50" class="prob-in"></div>
+    <div class="fld"><label>하단 Bear</label><input id="i-down" inputmode="decimal" placeholder="200">
+      <input type="number" id="i-pbear" min="0" max="100" step="1" placeholder="25" class="prob-in"></div>
   </div>
   <div class="prob-row">
-    <label>승리 확률 p (%)</label>
-    <input type="number" id="i-prob" min="1" max="99" step="1" value="55" style="width:80px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px;font-size:13px;font-family:var(--mono);text-align:right;">
-    <span class="prob-val" id="prob-val">패배 45%</span>
+    <span class="prob-val" id="prob-val">합 —</span>
   </div>
   <div class="prob-row">
     <label>분할 시작 분기</label>
@@ -990,6 +996,17 @@ function compute(){
 }
 
 function readProb(){let v=numVal('i-prob');if(isNaN(v))return null;v=Math.min(99,Math.max(1,v));return v/100;}
+/* 세 확률 입력을 읽는다. 하나라도 비었거나 합이 100 이 아니면 null.
+   Bear 는 검증에만 쓰고 저장하지 않는다 — 셋을 저장하면 합이 깨졌을 때
+   어느 값이 진실인지 알 수 없다. */
+function readProbs(){
+  const a=parseFloat($('i-prob').value), b=parseFloat($('i-pbase').value),
+        c=parseFloat($('i-pbear').value);
+  if(isNaN(a)||isNaN(b)||isNaN(c)) return null;
+  if(a<0||b<0||c<0) return null;        // 합만 보면 150/−50/0 이 통과한다
+  if(Math.abs(a+b+c-100)>1e-9) return null;
+  return {pBull:a/100, pBase:b/100, pBear:c/100};
+}
 function targetTotal(){return totalCapital;}
 
 /* currency selection for new holding */
@@ -1028,7 +1045,8 @@ function updatePreview(){
   }
   $('kelly-preview').innerHTML=html;
 }
-['i-price','i-up','i-down','i-prob'].forEach(id=>$(id).addEventListener('input',updatePreview));
+['i-price','i-up','i-down','i-base','i-prob','i-pbase','i-pbear']
+  .forEach(id=>$(id).addEventListener('input',updatePreview));
 function syncTotalFromFlows(){
   // 총 원금(달러) = 달러보유 + 원화보유÷환율
   const fx = baseFx>0?baseFx:1500;
@@ -1156,8 +1174,8 @@ function renderCashHist(){
 
 $('addBtn').addEventListener('click',()=>{
   const name=$('i-name').value.trim();
-  const price=numVal('i-price'),up=numVal('i-up'),down=numVal('i-down');
-  const prob=readProb();
+  const price=numVal('i-price'),up=numVal('i-up'),down=numVal('i-down'),base=numVal('i-base');
+  const P=readProbs();
   let startQ=$('i-startq').value.trim().toUpperCase();
   if(!parseQ(startQ)) startQ=currentQGuess();
   if(!name){setStatus('종목명을 입력하세요',true);return;}
@@ -1167,12 +1185,15 @@ $('addBtn').addEventListener('click',()=>{
       `재진입은 새 1칸을 씁니다. 기존 기록에 이어 붙지 않고 새 항목으로 추가됩니다.\n`+
       `한 번 틀렸던 회사이므로 검증 기준을 더 높게 잡으세요.\n\n진행할까요?`)) return;
   if(isNaN(price)||isNaN(up)||isNaN(down)){setStatus('가격·목표를 모두 입력하세요',true);return;}
-  if(prob===null){setStatus('승률을 입력하세요',true);return;}
+  if(isNaN(base)){setStatus('Base 목표가를 입력하세요',true);return;}
+  if(P===null){setStatus('세 확률을 입력하고 합을 100%로 맞추세요',true);return;}
+  if(!(up>=base && base>=down)){setStatus('상단 ≥ Base ≥ 하단 순서여야 합니다',true);return;}
   if(price<=0){setStatus('현재가는 0보다 커야 합니다',true);return;}
   // 달러 계좌면 종목도 달러 기준(fx=1, 금액이 곧 달러). 원화 계좌면 폼 통화 사용.
   const useCcy = baseCcy==='USD' ? 'USD' : newCcy;
   const fx = baseCcy==='USD' ? 1 : (newCcy==='USD' ? (numVal('i-fx')||1400) : 1);
-  const h={id:Date.now().toString(36),name,price,up,down,prob,startQ,ccy:useCcy,fx,ledger:[]};
+  const h={id:Date.now().toString(36),name,price,up,down,base,prob:P.pBull,pBase:P.pBase,
+           startQ,ccy:useCcy,fx,ledger:[]};
   const th=$('i-thesis').value.trim();
   if(th) h.thesis=th;        // 빈 값이면 필드를 만들지 않는다
   holdings.push(h);
@@ -1183,6 +1204,7 @@ $('addBtn').addEventListener('click',()=>{
   }
   save();render();
   $('i-name').value='';$('i-price').value='';$('i-up').value='';$('i-down').value='';$('i-startq').value='';
+  $('i-base').value='';$('i-pbase').value='';$('i-pbear').value='';
   $('i-thesis').value='';
   updatePreview();setStatus('추가됨: '+name);
 });
@@ -1635,7 +1657,7 @@ function setStatus(m,err){const s=$('status');s.textContent=m;s.style.color=err?
 let lastBackup = null;    // ISO 문자열, 마지막 내보내기 시각
 let dirtySinceBackup = false;  // 백업 후 변경 있었는지
 function dataSnapshot(){
-  return {v:4, holdings, candidates, rejIntroDate,
+  return {v:5, holdings, candidates, rejIntroDate,
           usdHolding, krwHolding, cashLog, baseFx, totalLocked, amtFixedUSD:true};
 }
 function save(){
@@ -1674,6 +1696,8 @@ function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r
     totalCapital=totalCapital*10000;
     holdings.forEach(h=>{ (h.ledger||[]).forEach(e=>{ if(e.amount) e.amount=Math.round(e.amount*10000); }); });
   }
+  // v5: 3-시나리오. 기존 종목은 base 가 없어 켈리가 보류된다 — 기본값을 채우지 않는다.
+  // 아무도 생각한 적 없는 숫자가 목표 배분을 움직이는 것보다 빈 칸이 정직하다.
   holdings.forEach(h=>{ if(!h.ledger) h.ledger=[]; if(!h.startQ) h.startQ=currentQGuess(); if(!h.ccy) h.ccy='KRW'; if(!h.fx) h.fx=(h.ccy==='USD'?1400:1);
     h.ledger.forEach(e=>{ if(e.fx===undefined) e.fx=(h.ccy==='USD'?h.fx:1); }); });
   const mig = migrateCandidates(d, Date.now());
