@@ -773,6 +773,34 @@ function stripReviewFields(c, editing){
   if(!editing){ delete c.stage; delete c.reviewNote; }
   return c;
 }
+
+/* 3-결과 켈리 — E[log(1+f·r)] 최대화의 닫힌해.
+   Σ pᵢrᵢ/(1+f·rᵢ)=0 의 분모를 걷어내면 f 에 대한 2차식이 된다:
+     α = r₁r₂r₃ · β = Σ pᵢrᵢ(rⱼ+rₖ) · γ = E[r]
+   log 정의역 안에서 목적함수가 오목하므로 정류점은 하나뿐이다.
+   rs=[bull,base,bear] 수익률 · ps=합이 1인 확률. 퇴화면 null. */
+function kelly3(rs, ps){
+  const [r1,r2,r3]=rs, [p1,p2,p3]=ps;
+  const A=r1*r2*r3;
+  const B=p1*r1*(r2+r3)+p2*r2*(r1+r3)+p3*r3*(r1+r2);
+  const C=p1*r1+p2*r2+p3*r3;
+  const inDomain=f=>rs.every(r=>1+f*r>1e-9);
+  if(Math.abs(A)<1e-12){
+    // 1차 축퇴. β까지 0이면 베팅 대상이 없다 (p_base=1 등) — 0/0 을 막는다.
+    if(Math.abs(B)<1e-12) return null;
+    const f=-C/B;
+    return inDomain(f)?f:null;
+  }
+  const D=B*B-4*A*C;
+  if(D<0) return null;
+  const s=Math.sqrt(D);
+  const cand=[(-B+s)/(2*A),(-B-s)/(2*A)].filter(inDomain);
+  if(!cand.length) return null;
+  if(cand.length===1) return cand[0];
+  // 수학적으로는 안 일어나지만 경계 부동소수점 오차의 안전망: E[log]가 큰 쪽
+  const g=f=>ps.reduce((acc,p,i)=>acc+p*Math.log(1+f*rs[i]),0);
+  return g(cand[0])>=g(cand[1])?cand[0]:cand[1];
+}
 /* ===== /PIPELINE PURE ===== */
 
 const KEY='kelly2y';

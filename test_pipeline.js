@@ -7,7 +7,7 @@ if (!m) { console.error('PIPELINE PURE 블록을 찾지 못했습니다'); proce
 const api = new Function(m[0] + `
   return {GRACE_MS, VERIFY_DAYS, isEditable, isSeeded, verifyDaysLeft, rejectionStats, migrateCandidates,
           isThesisBroken, isThesisReject, livePlanHoldings, pctClamp, needsPunchBack,
-          stageOf, stripReviewFields};
+          stageOf, stripReviewFields, kelly3};
 `)();
 
 /* compute()는 PURE 블록 밖에 있고 holdings/candidates를 전역으로 읽는다. 배분 수식도
@@ -29,8 +29,8 @@ function constOf(n) {
 }
 const alloc = new Function('var holdings=[], candidates=[];\n' + [
   constOf('HALF'), constOf('MAX_SINGLE'), constOf('THIN_DOWNSIDE'),
-  grab('isThesisReject'), grab('livePlanHoldings'), grab('kellyOf'), grab('compute'),
-  'return { compute, kellyOf, setState(h, c){ holdings = h; candidates = c; } };'
+  grab('isThesisReject'), grab('livePlanHoldings'), grab('kelly3'), grab('kellyOf'), grab('compute'),
+  'return { compute, kellyOf, kelly3, setState(h, c){ holdings = h; candidates = c; } };'
 ].join('\n'))();
 
 let pass = 0, fail = 0;
@@ -267,6 +267,47 @@ grp('stripReviewFields (기각 시 작업 기억 폐기)');
   const e = {id:'c', origin:'해자'};
   api.stripReviewFields(e, false);
   eq('없는 필드를 지워도 안전하다', e, {id:'c', origin:'해자'});
+}
+
+/* ---- kelly3 ---- */
+grp('kelly3 — 2-결과 축퇴 (기존 f = p/a − q/b 와 일치)');
+{
+  // Base 를 현재가(r=0)·확률 0 으로 두면 α=0 이라 1차식이 되고 기존 공식으로 환원된다.
+  [[400,264,200,0.55],[300,100,60,0.4],[150,90,50,0.7]].forEach(([up,px,dn,p])=>{
+    const b=(up-px)/px, a=(px-dn)/px;
+    eq(`상단 ${up} · 현재가 ${px} · 하단 ${dn} · p ${p}`,
+       api.kelly3([b,0,-a],[p,0,1-p]), p/a-(1-p)/b);
+  });
+}
+
+grp('kelly3 — 3-결과 (수치 최대화와 대조)');
+{
+  // 브레인스토밍 단계에서 무식한 격자 탐색으로 확인한 값. 소수 4자리까지 고정.
+  const near=(label,got,want)=>eq(label, Math.round(got*1e4)/1e4, want);
+  near('TSMC PBR 5.0 매수 (8.04/5.70/3.05, 25/50/25)',
+       api.kelly3([(8.04-5)/5,(5.70-5)/5,(3.05-5)/5],[0.25,0.50,0.25]), 0.9729);
+  near('상방 치우침 (1.2/0.3/−0.4, 20/50/30)',
+       api.kelly3([1.2,0.3,-0.4],[0.2,0.5,0.3]), 1.1084);
+  near('하방 치우침 (0.5/−0.1/−0.6, 30/40/30)',
+       api.kelly3([0.5,-0.1,-0.6],[0.3,0.4,0.3]), -0.3796);
+  near('얕은 하방 폭발 (0.5/0.1/−0.03, 25/50/25)',
+       api.kelly3([0.5,0.1,-0.03],[0.25,0.50,0.25]), 23.2938);
+}
+
+grp('kelly3 — 퇴화 입력은 null');
+{
+  eq('p_base=1 (확실히 제자리) → α=β=γ=0', api.kelly3([0.5,0,-0.3],[0,1,0]), null);
+  eq('세 수익률이 전부 0', api.kelly3([0,0,0],[0.3,0.4,0.3]), null);
+}
+
+grp('kelly3 — 근 선택이 log 정의역 안인가');
+{
+  const rs=[0.5,0.1,-0.4], ps=[0.3,0.4,0.3];
+  const f=api.kelly3(rs,ps);
+  eq('정의역 안 (모든 1+f·r > 0)', rs.every(r=>1+f*r>0), true);
+  // 정의역 안에서는 도함수가 0 이어야 한다
+  const dg=rs.reduce((s,r,i)=>s+ps[i]*r/(1+f*r),0);
+  eq('도함수 ≈ 0', Math.round(dg*1e9)/1e9, 0);
 }
 
 console.log('\n' + (fail ? `FAILED  ${pass} pass / ${fail} fail` : `OK  ${pass} pass`));
