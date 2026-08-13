@@ -369,6 +369,13 @@ thinDown 은 하단 칸이 아니라 가장 나쁜 시나리오 기준이다 —
     ok('확률 합 ≠ 100 이면 저장 거부', holdings.length === hCnt,
        hCnt + ' → ' + holdings.length);
 
+    /* 합이 100 이어도 개별 음수는 거부 */
+    $('i-prob').value  = '150'; $('i-pbase').value = '-50'; $('i-pbear').value = '0';
+    $('addBtn').click();
+    ok('개별 확률이 음수면 저장 거부', holdings.length === hCnt,
+       hCnt + ' → ' + holdings.length);
+    $('i-prob').value  = '25'; $('i-pbase').value = '50'; $('i-pbear').value = '25';
+
     /* 순서 위반이면 저장 거부 */
     $('i-name').value  = '__순서틀림';
     $('i-base').value  = '60';          // 하단 70 보다 낮다
@@ -429,6 +436,18 @@ CSS 는 `index_kelly.html` 의 `.pl-stage` 정의 근처에 추가한다:
 
 기존 `i-prob` 의 인라인 `style` 속성은 제거하고 `class="prob-in"` 으로 통일한다.
 
+**`<span id="prob-val">`(`:360`)를 지우지 않는다.** Task 2 의 `updatePreview` 가 그 요소를
+참조하므로 삭제하면 입력·로드마다 예외가 난다. `i-prob` 이 Bull 행으로 옮겨가면서 비는
+`.prob-row` 를 확률 합 표시로 용도 변경해 span 을 살린다 — Task 4·5 의 `re-prob-val`·
+`em-prob-val` 과 같은 처리다:
+
+```html
+  <div class="prob-row">
+    <label>확률 합</label>
+    <span class="prob-val" id="prob-val">—</span>
+  </div>
+```
+
 - [ ] **Step 4: `readProbs()` 를 만든다**
 
 `index_kelly.html` 의 `readProb()` 정의 **뒤**에 붙인다 (`readProb` 은 재평가·수정 모달이 계속 쓰므로 지우지 않는다):
@@ -441,6 +460,7 @@ function readProbs(){
   const a=parseFloat($('i-prob').value), b=parseFloat($('i-pbase').value),
         c=parseFloat($('i-pbear').value);
   if(isNaN(a)||isNaN(b)||isNaN(c)) return null;
+  if(a<0||b<0||c<0) return null;        // 합만 보면 150/−50/0 이 통과한다
   if(Math.abs(a+b+c-100)>1e-9) return null;
   return {pBull:a/100, pBase:b/100, pBear:c/100};
 }
@@ -512,7 +532,7 @@ function readProbs(){
 - [ ] **Step 8: 통과를 확인한다**
 
 Step 2 와 같은 절차로 다시 돌린다.
-Expected: PASS — 패널 머리글 `전부 통과 · 107건` (기존 97 + 신규 10).
+Expected: PASS — 패널 머리글 `전부 통과 · 108건` (기존 97 + 신규 11).
 
 - [ ] **Step 9: 커밋**
 
@@ -659,6 +679,7 @@ function reProbSum(){
   if(isNaN(up)||isNaN(down)||isNaN(base)){ setStatus('세 시나리오를 입력하세요',true); return; }
   if(up<=0||down<=0||base<=0){ setStatus('목표가는 0보다 커야 합니다',true); return; }
   if(isNaN(pb)||isNaN(pm)||isNaN(pw)){ setStatus('세 확률을 입력하세요',true); return; }
+  if(pb<0||pm<0||pw<0){ setStatus('확률은 0% 이상이어야 합니다',true); return; }
   if(Math.abs(pb+pm+pw-100)>1e-9){ setStatus('확률 합을 100%로 맞추세요',true); return; }
   if(!(up>=base && base>=down)){ setStatus('상단 ≥ Base ≥ 하단 순서여야 합니다',true); return; }
   if(!reason){ setStatus('재평가 근거를 적어주세요',true); return; }
@@ -693,7 +714,7 @@ function reProbSum(){
 
 - [ ] **Step 7: 통과를 확인한다**
 
-Expected: PASS — `전부 통과 · 116건` (107 + 신규 9).
+Expected: PASS — `전부 통과 · 117건` (108 + 신규 9).
 
 - [ ] **Step 8: 커밋**
 
@@ -816,6 +837,7 @@ function emProbSum(){
   if(isNaN(price)||isNaN(up)||isNaN(down)||isNaN(base)){ setStatus('가격·세 시나리오를 모두 입력하세요',true); return; }
   if(price<=0){ setStatus('현재가는 0보다 커야 합니다',true); return; }
   if(isNaN(pb)||isNaN(pm)||isNaN(pw)){ setStatus('세 확률을 입력하세요',true); return; }
+  if(pb<0||pm<0||pw<0){ setStatus('확률은 0% 이상이어야 합니다',true); return; }
   if(Math.abs(pb+pm+pw-100)>1e-9){ setStatus('확률 합을 100%로 맞추세요',true); return; }
   if(!(up>=base && base>=down)){ setStatus('상단 ≥ Base ≥ 하단 순서여야 합니다',true); return; }
   if(!parseQ(startQ)) startQ=h.startQ||currentQGuess();
@@ -827,7 +849,7 @@ function emProbSum(){
 
 - [ ] **Step 6: 통과를 확인한다**
 
-Expected: PASS — `전부 통과 · 123건` (116 + 신규 7).
+Expected: PASS — `전부 통과 · 124건` (117 + 신규 7).
 
 - [ ] **Step 7: 커밋**
 
@@ -927,6 +949,7 @@ CSS 를 `.prob-in` 정의 근처에 추가한다:
       {id:'nb2',name:'__정상',price:100,up:150,base:120,down:70,prob:0.25,pBase:0.5,
        startQ:currentQGuess(),ccy:'USD',fx:1,ledger:[]}
     ];
+    viewMode='alloc';   // 배너는 목표 배분 분기에서만 렌더된다 — 앞 섹션이 바꿨을 수 있다
     render();
     const banners=[...document.querySelectorAll('.hold-nobase')];
     ok('Base 미입력 종목에 배너가 뜬다', banners.length === 1, banners.length);
@@ -938,7 +961,7 @@ CSS 를 `.prob-in` 정의 근처에 추가한다:
 - [ ] **Step 5: 통과를 확인한다**
 
 Run: `node test_pipeline.js` → `OK  97 pass` (90 + 신규 7)
-selfcheck → `전부 통과 · 125건` (123 + 신규 2)
+selfcheck → `전부 통과 · 126건` (124 + 신규 2)
 
 - [ ] **Step 6: 커밋**
 
@@ -967,7 +990,7 @@ node test_pipeline.js
 Expected: `OK  97 pass`
 
 selfcheck 는 Task 3 Step 2 절차로 돌린다.
-Expected: `전부 통과 · 125건`
+Expected: `전부 통과 · 126건`
 
 - [ ] **Step 2: 돌연변이 3개로 테스트가 무는지 확인한다**
 
@@ -1071,7 +1094,7 @@ git commit -m "docs: record three-scenario kelly as D20"
 | 무엇 | 어떻게 | 기대 |
 |---|---|---|
 | 순수 수식 | `node test_pipeline.js` | `OK  97 pass` |
-| DOM 경로 | headless Chrome + `_selfcheck.html` | `전부 통과 · 125건` |
+| DOM 경로 | headless Chrome + `_selfcheck.html` | `전부 통과 · 126건` |
 | 테스트가 무는가 | 돌연변이 A·B (Task 7 Step 2) | 각각 지정된 항목 FAIL |
 | 레이아웃·실데이터 | 폰 실기 (자동 검사 불가) | 체크리스트 2단계 |
 
