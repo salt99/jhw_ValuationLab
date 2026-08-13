@@ -137,7 +137,7 @@ pos.forEach(r=>r.rel=equityScale>0?r.w/equityScale:0);
   체크리스트 2단계의 표를 **함께** 갱신할 것 — 세 곳이 같은 숫자를 말해야 한다.
   **단 `startQ` 만은 고정값이 아니라 `currentQGuess()` 다** — 지난 분기를 박으면 §7-D26
   동작과 어긋나 "8월인데 Q1 시작" 화면이 다시 나온다.
-- **`load()` 안의 `advanceStartQ` 호출**(`index_kelly.html:1729`). 이 호출이 빠져도
+- **`load()` 안의 `advanceStartQ` 호출**(`index_kelly.html:1734`). 이 호출이 빠져도
   `test_pipeline.js` 는 **129건 전부 통과한다** — 순수 함수는 멀쩡하기 때문이다. 실제로
   돌연변이로 확인했고, 자체 검사 26번 3건만 FAIL 했다. 단위 검사가 지켜주지 않는 자리다.
 
