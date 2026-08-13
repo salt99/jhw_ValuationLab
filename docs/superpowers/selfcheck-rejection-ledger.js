@@ -502,6 +502,14 @@
        hCnt + ' → ' + holdings.length);
     $('i-prob').value  = '25'; $('i-pbase').value = '50'; $('i-pbear').value = '25';
 
+    /* 하단이 음수여도 순서·합만 맞으면 저장되어선 안 된다 (F1) */
+    $('i-name').value  = '__하단음수';
+    $('i-down').value  = '-10';
+    $('addBtn').click();
+    ok('하단이 음수면 저장 거부', holdings.length === hCnt,
+       hCnt + ' → ' + holdings.length);
+    $('i-down').value  = '70';
+
     /* 순서 위반이면 저장 거부 */
     $('i-name').value  = '__순서틀림';
     $('i-base').value  = '60';          // 하단 70 보다 낮다

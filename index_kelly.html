@@ -189,7 +189,7 @@
   .pl-stage label{display:flex;align-items:center;gap:4px;font-size:11px;
     color:var(--dim);cursor:pointer;}
   .pl-stage input{accent-color:var(--accent);margin:0;}
-  .prob-in{width:64px;margin-left:8px;background:var(--panel-2);border:1px solid var(--line);
+  .prob-in{width:64px;background:var(--panel-2);border:1px solid var(--line);
     color:var(--ink);border-radius:8px;padding:9px;font-size:13px;
     font-family:var(--mono);text-align:right;}
   .hold-nobase{font-size:11px;color:var(--warn);margin-top:6px;line-height:1.5;}
@@ -1186,6 +1186,7 @@ $('addBtn').addEventListener('click',()=>{
   if(isNaN(price)||isNaN(up)||isNaN(down)){setStatus('가격·목표를 모두 입력하세요',true);return;}
   if(isNaN(base)){setStatus('Base 목표가를 입력하세요',true);return;}
   if(P===null){setStatus('세 확률을 입력하고 합을 100%로 맞추세요',true);return;}
+  if(up<=0||down<=0||base<=0){setStatus('목표가는 0보다 커야 합니다',true);return;}
   if(!(up>=base && base>=down)){setStatus('상단 ≥ Base ≥ 하단 순서여야 합니다',true);return;}
   if(price<=0){setStatus('현재가는 0보다 커야 합니다',true);return;}
   // 달러 계좌면 종목도 달러 기준(fx=1, 금액이 곧 달러). 원화 계좌면 폼 통화 사용.
@@ -2560,15 +2561,17 @@ function reDelta(){
   const up=numVal('re-up'), down=numVal('re-down'), base=numVal('re-base');
   const prob=parseFloat($('re-prob').value)/100, pBase=parseFloat($('re-pbase').value)/100;
   const d=$('re-delta');
-  if(isNaN(up)||isNaN(down)||isNaN(base)||isNaN(prob)||up<=0||down<=0||base<=0){ d.style.display='none'; return; }
+  if(isNaN(up)||isNaN(down)||isNaN(base)||isNaN(prob)||isNaN(pBase)||up<=0||down<=0||base<=0){ d.style.display='none'; return; }
   // 새 가정으로 켈리 미리보기
   const kNew=kellyOf({price:h.price,up,down,base,prob,pBase});
   const kOld=kellyOf(h);
   if(kNew.f===null){ d.style.display='block'; d.innerHTML=`<span style="color:var(--bad)">${kNew.err}</span>`; return; }
   const parts=[];
   if(up!==h.up) parts.push(`상단 ${fmtNum(h.up)}→${fmtNum(up)}`);
+  if(base!==h.base) parts.push(`Base ${fmtNum(h.base)}→${fmtNum(base)}`);
   if(down!==h.down) parts.push(`하단 ${fmtNum(h.down)}→${fmtNum(down)}`);
   if(Math.round(prob*100)!==Math.round(h.prob*100)) parts.push(`승률 ${Math.round(h.prob*100)}→${Math.round(prob*100)}%`);
+  if(Math.round(pBase*100)!==Math.round(h.pBase*100)) parts.push(`Base확률 ${Math.round(h.pBase*100)}→${Math.round(pBase*100)}%`);
   const changeStr = parts.length?parts.join(' · '):'변경 없음';
   const fOld=kOld.f!==null?fmtPct(kOld.f):'—';
   const fNew=fmtPct(kNew.f);
