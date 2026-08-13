@@ -523,15 +523,13 @@
       <input type="text" id="re-quarter" style="width:100px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px;font-size:13px;font-family:var(--mono);text-align:center;">
       <span class="prob-val" id="re-cur" style="min-width:auto;font-size:10.5px;color:var(--faint);"></span>
     </div>
-    <div class="add-grid" style="grid-template-columns:1fr 1fr;margin-top:12px;">
-      <div class="fld"><label id="re-up-label">상단목표</label><input id="re-up" inputmode="numeric"></div>
-      <div class="fld"><label id="re-down-label">하단목표</label><input id="re-down" inputmode="numeric"></div>
-    </div>
-    <div class="prob-row">
-      <label>승리 확률 p (%)</label>
-      <input type="number" id="re-prob" min="1" max="99" step="1" style="width:80px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px;font-size:13px;font-family:var(--mono);text-align:right;">
-      <span class="prob-val" id="re-prob-val"></span>
-    </div>
+    <div class="fld" style="margin-top:12px;"><label id="re-up-label">상단 Bull</label><input id="re-up" inputmode="numeric">
+      <input type="number" id="re-prob" min="0" max="100" step="1" class="prob-in"></div>
+    <div class="fld" style="margin-top:10px;"><label id="re-base-label">Base</label><input id="re-base" inputmode="numeric">
+      <input type="number" id="re-pbase" min="0" max="100" step="1" class="prob-in"></div>
+    <div class="fld" style="margin-top:10px;"><label id="re-down-label">하단 Bear</label><input id="re-down" inputmode="numeric">
+      <input type="number" id="re-pbear" min="0" max="100" step="1" class="prob-in"></div>
+    <div class="re-sum">확률 합 <span id="re-prob-val">—</span></div>
     <div class="re-delta" id="re-delta"></div>
     <div class="fld" style="margin-top:10px;">
       <label>재평가 근거 (왜 상단·하단·승률이 바뀌었나)</label>
@@ -1483,9 +1481,12 @@ function render(){
                 // 재평가 이력: 이전→새 값 + 근거
                 const parts=[];
                 if(e.prevUp!==undefined && e.prevUp!==e.up) parts.push(`상단 ${fmtNum(e.prevUp)}→${fmtNum(e.up)}`);
+                if(e.prevBase!==undefined && e.prevBase!==e.base) parts.push(`Base ${fmtNum(e.prevBase)}→${fmtNum(e.base)}`);
                 if(e.prevDown!==undefined && e.prevDown!==e.down) parts.push(`하단 ${fmtNum(e.prevDown)}→${fmtNum(e.down)}`);
-                if(e.prevProb!==undefined && Math.round(e.prevProb*100)!==Math.round(e.prob*100)) parts.push(`승률 ${Math.round(e.prevProb*100)}→${Math.round(e.prob*100)}%`);
-                const changeStr=parts.length?parts.join(' · '):`상단 ${fmtNum(e.up)} · 하단 ${fmtNum(e.down)} · 승률 ${Math.round(e.prob*100)}%`;
+                if(e.prevProb!==undefined && Math.round(e.prevProb*100)!==Math.round(e.prob*100)) parts.push(`Bull ${Math.round(e.prevProb*100)}→${Math.round(e.prob*100)}%`);
+                if(e.prevPBase!==undefined && Math.round(e.prevPBase*100)!==Math.round(e.pBase*100)) parts.push(`Base확률 ${Math.round(e.prevPBase*100)}→${Math.round(e.pBase*100)}%`);
+                const changeStr=parts.length?parts.join(' · ')
+                  :`상단 ${fmtNum(e.up)}${e.base!==undefined?` · Base ${fmtNum(e.base)}`:''} · 하단 ${fmtNum(e.down)}`;
                 logHtml+=`<div class="lg-entry reassess">
                   <div class="lg-top"><span class="lg-badge reassess">재평가</span><span class="lg-meta mono">${e.date||''} · ${changeStr}</span>
                     <span class="lg-del" style="margin-left:auto" data-lgdel="${h.id}:${e.id}">✕</span></div>
@@ -2505,19 +2506,30 @@ $('em-save').addEventListener('click',()=>{
 
 /* ---- reassess (재평가) modal ---- */
 let reCtx={hid:null};
+/* 재평가 모달의 확률 합 표시 — 100%가 아니면 눈에 띄어야 한다 */
+function reProbSum(){
+  const a=parseFloat($('re-prob').value), b=parseFloat($('re-pbase').value),
+        c=parseFloat($('re-pbear').value);
+  if(isNaN(a)||isNaN(b)||isNaN(c)) return '—';
+  return (a+b+c)+'%';
+}
 function openReassessModal(hid){
   const h=holdings.find(x=>x.id===hid); if(!h) return;
   reCtx={hid};
   const ccy=ccyOf(h), sym=ccySym(ccy);
   $('re-title').textContent=`${h.name} · 가정 재평가`;
   $('re-quarter').value=currentQGuess();
-  $('re-cur').textContent=`현재 상단 ${sym}${fmtNum(h.up)} · 하단 ${sym}${fmtNum(h.down)} · 승률 ${Math.round(h.prob*100)}%`;
+  $('re-cur').textContent=`현재 상단 ${sym}${fmtNum(h.up)} · Base ${h.base!==undefined?sym+fmtNum(h.base):'—'} · 하단 ${sym}${fmtNum(h.down)}`;
   $('re-up-label').textContent=`상단목표 (${sym})`;
   $('re-down-label').textContent=`하단목표 (${sym})`;
   $('re-up').value=commafy(h.up);
   $('re-down').value=commafy(h.down);
   $('re-prob').value=Math.round(h.prob*100);
-  $('re-prob-val').textContent='패배 '+Math.round((1-h.prob)*100)+'%';
+  $('re-base').value  = h.base!==undefined ? h.base : '';
+  $('re-pbase').value = h.pBase!==undefined ? Math.round(h.pBase*100) : '';
+  $('re-pbear').value = (h.pBase!==undefined && h.prob!==undefined)
+    ? Math.round((1-h.prob-h.pBase)*100) : '';
+  $('re-prob-val').textContent = reProbSum();
   $('re-reason').value='';
   reDelta();
   $('reModal').style.display='flex';
@@ -2527,7 +2539,7 @@ function reDelta(){
   const up=numVal('re-up'), down=numVal('re-down'), base=numVal('re-base');
   const prob=parseFloat($('re-prob').value)/100, pBase=parseFloat($('re-pbase').value)/100;
   const d=$('re-delta');
-  if(isNaN(up)||isNaN(down)||isNaN(prob)||up<=0||down<=0){ d.style.display='none'; return; }
+  if(isNaN(up)||isNaN(down)||isNaN(base)||isNaN(prob)||up<=0||down<=0||base<=0){ d.style.display='none'; return; }
   // 새 가정으로 켈리 미리보기
   const kNew=kellyOf({price:h.price,up,down,base,prob,pBase});
   const kOld=kellyOf(h);
@@ -2547,38 +2559,39 @@ function reDelta(){
   }
   d.innerHTML=dhtml;
 }
-$('re-up').addEventListener('input',reDelta);
-$('re-down').addEventListener('input',reDelta);
-$('re-prob').addEventListener('input',()=>{
-  let v=parseFloat($('re-prob').value); if(!isNaN(v)){ v=Math.min(99,Math.max(1,v)); $('re-prob-val').textContent='패배 '+Math.round(100-v)+'%'; }
-  reDelta();
+['re-up','re-down','re-base','re-prob','re-pbase','re-pbear'].forEach(id=>{
+  $(id).addEventListener('input',()=>{ $('re-prob-val').textContent=reProbSum(); reDelta(); });
 });
 $('re-close').addEventListener('click',()=>{$('reModal').style.display='none';});
 $('reModal').addEventListener('click',e=>{if(e.target===$('reModal'))$('reModal').style.display='none';});
 $('re-save').addEventListener('click',()=>{
   const h=holdings.find(x=>x.id===reCtx.hid); if(!h) return;
-  const up=numVal('re-up'), down=numVal('re-down');
-  let prob=parseFloat($('re-prob').value);
+  const up=numVal('re-up'), down=numVal('re-down'), base=numVal('re-base');
+  const pb=parseFloat($('re-prob').value), pm=parseFloat($('re-pbase').value),
+        pw=parseFloat($('re-pbear').value);
   let quarter=$('re-quarter').value.trim().toUpperCase();
   const reason=$('re-reason').value.trim();
-  if(isNaN(up)||isNaN(down)){ setStatus('상단·하단을 입력하세요',true); return; }
-  if(up<=0||down<=0){ setStatus('목표가는 0보다 커야 합니다',true); return; }
-  if(isNaN(prob)){ setStatus('승률을 입력하세요',true); return; }
+  if(isNaN(up)||isNaN(down)||isNaN(base)){ setStatus('세 시나리오를 입력하세요',true); return; }
+  if(up<=0||down<=0||base<=0){ setStatus('목표가는 0보다 커야 합니다',true); return; }
+  if(isNaN(pb)||isNaN(pm)||isNaN(pw)){ setStatus('세 확률을 입력하세요',true); return; }
+  if(pb<0||pm<0||pw<0){ setStatus('확률은 0% 이상이어야 합니다',true); return; }
+  if(Math.abs(pb+pm+pw-100)>1e-9){ setStatus('확률 합을 100%로 맞추세요',true); return; }
+  if(!(up>=base && base>=down)){ setStatus('상단 ≥ Base ≥ 하단 순서여야 합니다',true); return; }
   if(!reason){ setStatus('재평가 근거를 적어주세요',true); return; }
-  prob=Math.min(99,Math.max(1,prob))/100;
+  const prob=pb/100, pBase=pm/100;
   if(!parseQ(quarter)) quarter=currentQGuess();
   // 이전 값 스냅샷 + 새 값 기록 (ledger에 reassess 이벤트)
   const entry={
     id:Date.now().toString(36), quarter, date:new Date().toISOString().slice(0,10),
     type:'reassess',
-    up, down, prob,                          // 새 값
-    prevUp:h.up, prevDown:h.down, prevProb:h.prob,   // 이전 값
+    up, down, base, prob, pBase,                                        // 새 값
+    prevUp:h.up, prevDown:h.down, prevBase:h.base, prevProb:h.prob, prevPBase:h.pBase,  // 이전 값
     reason
   };
   if(!h.ledger) h.ledger=[];
   h.ledger.push(entry);
   // 종목 현재 가정 갱신 → 켈리 재계산
-  h.up=up; h.down=down; h.prob=prob;
+  h.up=up; h.down=down; h.base=base; h.prob=prob; h.pBase=pBase;
   save(); $('reModal').style.display='none'; render();
   setStatus('재평가 저장됨 · 켈리 목표 갱신');
 });

@@ -520,6 +520,39 @@
     /* 스냅샷 버전 */
     ok('스냅샷이 v5', dataSnapshot().v === 5, dataSnapshot().v);
 
+    /* ---------- 21. 재평가 — Base 변경과 이력 ---------- */
+    const rid='__t_re';
+    holdings.push({id:rid,name:'__재평가테스트',price:100,up:150,base:120,down:70,
+      prob:0.25,pBase:0.5,startQ:currentQGuess(),ccy:'USD',fx:1,ledger:[]});
+    render();
+    openReassessModal(rid);
+    ok('재평가 모달에 Base 가 채워진다', $('re-base').value === '120', $('re-base').value);
+    ok('재평가 모달에 Base 확률이 채워진다', $('re-pbase').value === '50', $('re-pbase').value);
+    ok('재평가 모달에 Bear 확률이 채워진다', $('re-pbear').value === '25', $('re-pbear').value);
+
+    $('re-base').value   = '130';
+    $('re-reason').value = '';
+    $('re-save').click();
+    ok('근거 없으면 저장 거부', holdings.find(h=>h.id===rid).base === 120,
+       holdings.find(h=>h.id===rid).base);
+
+    $('re-reason').value = 'Base 상향 — 가격 인상 반영';
+    $('re-save').click();
+    const rh = holdings.find(h=>h.id===rid);
+    ok('Base 가 갱신된다', rh.base === 130, rh.base);
+    const last = rh.ledger[rh.ledger.length-1];
+    ok('원장에 이전 Base 가 남는다', last.prevBase === 120, last.prevBase);
+    ok('원장에 새 Base 가 남는다', last.base === 130, last.base);
+    ok('원장에 이전 Base 확률이 남는다', Math.abs(last.prevPBase - 0.5) < 1e-9, last.prevPBase);
+
+    /* 순서·확률 검증이 재평가에도 걸린다 */
+    openReassessModal(rid);
+    $('re-base').value   = '60';        // 하단 70 보다 낮다
+    $('re-reason').value = '순서 위반 테스트';
+    $('re-save').click();
+    ok('재평가도 순서 위반을 막는다', holdings.find(h=>h.id===rid).base === 130,
+       holdings.find(h=>h.id===rid).base);
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
