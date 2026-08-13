@@ -16,18 +16,47 @@ const OUT = path.join(ROOT, '_selfcheck.html');
 const DEMO = process.argv.includes('--demo');
 
 /* --demo: 눈으로 볼 화면용 데이터를 메모리에만 넣는다. save() 를 부르지 않으므로
-   localStorage 는 그대로고, 새로고침하면 실제 데이터로 돌아온다. */
+   localStorage 는 그대로고, 새로고침하면 실제 데이터로 돌아온다.
+
+   보유 종목은 **고정 픽스처**다(§7-D24). 값을 바꾸면 화면 비교의 기준이 사라지므로
+   바꿀 이유가 생기면 아래 표를 함께 갱신한다. 한 화면에서 전부 확인되도록 골랐다:
+
+     종목    켈리 f   목표비중   색     비고
+     TSMC    3.7418   30.00%   --h1   상한에 걸린다
+     Costco  1.3582   14.01%   --h2
+     Visa    1.5848   16.35%   --h3
+     ASML    1.6250   16.76%   --h4
+     Novo    1.3844   14.28%   --h5
+     Adyen        —        —   없음   Base 미입력 → 켈리 보류, 카드 띠 transparent
+
+     주식 91.4% · 채권 8.6%   (원금 $100,000)
+
+   즉 5색 · 개별 상한 · 채권 구간 · 보류 종목이 한 번에 렌더된다. */
 const demoScript = [
   '(function(){',
   '  var D=864e5, n=Date.now();',
   '  var iso=function(m){return new Date(m).toISOString().slice(0,10);};',
+  '  totalCapital=100000;',
+  '  holdings=[',
+  '    {id:"h1",name:"TSMC",  price:210, up:420, base:300, down:160,prob:0.50,pBase:0.42,',
+  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"파운드리 독점 · 3nm 전환",ledger:[]},',
+  '    {id:"h2",name:"Costco",price:920, up:1400,base:1150,down:700,prob:0.25,pBase:0.35,',
+  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"멤버십 갱신율",ledger:[]},',
+  '    {id:"h3",name:"Visa",  price:340, up:560, base:440, down:260,prob:0.25,pBase:0.35,',
+  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"결제 네트워크 효과",ledger:[]},',
+  '    {id:"h4",name:"ASML",  price:780, up:1300,base:1000,down:600,prob:0.25,pBase:0.35,',
+  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"EUV 독점",ledger:[]},',
+  '    {id:"h5",name:"Novo",  price:58,  up:105, base:80,  down:42, prob:0.22,pBase:0.38,',
+  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"GLP-1 파이프라인",ledger:[]},',
+  '    {id:"h6",name:"Adyen", price:1400,up:2600,          down:900,prob:0.30,',
+  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"",ledger:[]}];',
   '  candidates=[',
-  '    {id:"d1",name:"Costco",status:"reviewing",startDate:iso(n-70*D)},',
-  '    {id:"d2",name:"Visa",status:"reviewing",startDate:iso(n-20*D)},',
+  '    {id:"d1",name:"Ferrari",status:"reviewing",startDate:iso(n-70*D)},',
+  '    {id:"d2",name:"Hermes",status:"reviewing",startDate:iso(n-20*D)},',
   '    {id:"d3",name:"Arista",status:"rejected",startDate:iso(n-10*D),',
   '     rejectedDate:iso(n-D),rejectedAt:n-D,rejectPrice:142,rejectReason:"factor",',
   '     trigger:"반도체 노출 줄면 재검토",note:"",linkedHoldingId:null,verify:null},',
-  '    {id:"d4",name:"TSMC",status:"rejected",startDate:iso(n-1200*D),',
+  '    {id:"d4",name:"Broadcom",status:"rejected",startDate:iso(n-1200*D),',
   '     rejectedDate:iso(n-1200*D),rejectedAt:n-40*D,rejectPrice:210,rejectReason:"valuation",',
   '     trigger:"PBR 6배 이하 재검토",note:"",linkedHoldingId:null,verify:null},',
   '    {id:"d5",name:"Nvidia",status:"rejected",startDate:iso(n-200*D),',

@@ -88,33 +88,45 @@ FAIL이 하나라도 나오면 항목 이름을 알려주면 고치겠다.
 
 ## 2단계 — 눈으로 볼 것 (5분)
 
-기계가 판단할 수 없는 것만 남겼다. 아래를 콘솔에 붙여 화면용 데이터를 넣는다:
+기계가 판단할 수 없는 것만 남겼다. 화면용 데이터는 **고정 픽스처**로 못박혀 있다(§7-D25) —
+매번 다른 데이터를 넣으면 "전에는 어땠더라"를 비교할 수 없기 때문이다:
 
-```js
-const s=JSON.parse(localStorage.getItem('kelly2y')), D=864e5, n=Date.now();
-const iso=m=>new Date(m).toISOString().slice(0,10);
-s.candidates=[
- {id:'d1',name:'Costco',status:'reviewing',startDate:iso(n-70*D)},
- {id:'d2',name:'Visa',status:'reviewing',startDate:iso(n-20*D)},
- {id:'d3',name:'Arista',status:'rejected',startDate:iso(n-10*D),rejectedDate:iso(n-D),
-  rejectedAt:n-D,rejectPrice:142,rejectReason:'factor',trigger:'반도체 노출 줄면 재검토',
-  note:'',linkedHoldingId:null,verify:null},
- {id:'d4',name:'TSMC',status:'rejected',startDate:iso(n-1200*D),rejectedDate:iso(n-1200*D),
-  rejectedAt:n-40*D,rejectPrice:210,rejectReason:'valuation',trigger:'PBR 6배 이하 재검토',
-  note:'',linkedHoldingId:null,verify:null},
- {id:'d5',name:'Nvidia',status:'rejected',startDate:iso(n-200*D),rejectedDate:iso(n-5*D),
-  rejectedAt:n-5*D,rejectPrice:890,rejectReason:'thesis',trigger:'데이터센터 재가속 시 재검토',
-  note:'',linkedHoldingId:null,verify:null}];
-localStorage.setItem('kelly2y',JSON.stringify(s)); location.reload();
+```bash
+node docs/superpowers/build-selfcheck.js --demo && open _selfcheck.html
 ```
+
+메모리에만 올라가므로 `localStorage`는 안 건드리고, 새로고침하면 실데이터로 돌아온다.
+끝나면 `rm _selfcheck.html`.
+
+이 픽스처가 한 화면에 내놓는 것 — **틀리면 픽스처나 코드 둘 중 하나가 깨진 것이다**:
+
+| 종목 | 목표비중 | 색 | 비고 |
+|---|---|---|---|
+| TSMC | 30.00% | `--h1` 민트 | **상한에 걸린다** |
+| Costco | 14.01% | `--h2` 오키드 | |
+| Visa | 16.35% | `--h3` 라임 | |
+| ASML | 16.76% | `--h4` 핑크 | |
+| Novo | 14.28% | `--h5` 시안 | |
+| Adyen | — | 없음 | Base 미입력 → 켈리 보류 |
+
+주식 **91.4%** · 채권 **8.6%** (원금 $100,000)
 
 ### 보기
 
 - [ ] 하단에 `후보 파이프라인` 카드가 있고, 나머지 도구와 **색·폰트가 같다**
       (스타일이 안 먹으면 CSS 클래스 오타 — 파싱 검사로는 안 잡힌다)
 - [ ] 섹션이 `▸ 검토중` / `▸ 기각` / `▸ 칸 회수` 세 개로 보인다
-- [ ] TSMC에 `🔍 검증 필요`(앰버색) 와 `소급 등록` 배지가 있다
-- [ ] TSMC에는 `삭제` 버튼이 없고 잠김 안내문이 있다 (Arista에는 삭제 버튼이 있다)
+- [ ] Broadcom에 `🔍 검증 필요`(앰버색) 와 `소급 등록` 배지가 있다
+- [ ] Broadcom에는 `삭제` 버튼이 없고 잠김 안내문이 있다 (Arista에는 삭제 버튼이 있다)
+- [ ] **배분바 다섯 칸의 색이 서로 확실히 구분된다** — 특히 폰 밝기를 낮추거나 햇빛
+      아래에서도. 색차는 ΔE 38 이상으로 계산해뒀지만 실제 패널·조명은 계산 밖이다(§7-D24)
+- [ ] **카드 왼쪽 띠 색이 배분바의 그 종목 칸과 같다** — 색이 밀리는 건 자동 검사가
+      잡지만, "같은 색으로 보이는가"는 눈이 판단한다
+- [ ] Adyen 카드에는 왼쪽 띠 색이 없고, **그래도 다른 카드와 들여쓰기가 맞는다**
+- [ ] 종목 색이 `--warn`(앰버 경고)·`--bad`(빨강)과 **헷갈리지 않는다** — 종목 색이
+      상태로 읽히면 안 된다(§6). 같은 화면에 상한 경고가 떠 있으니 나란히 두고 본다
+- [ ] TSMC 칸에 `상한 30%` 태그가 붙고, 경고박스에 `초과분은 다른 종목이 아니라
+      채권으로 갔습니다` 가 뜬다
 - [ ] **폰 폭으로 좁혔을 때 가로 스크롤이 안 생긴다** — 모바일 우선 원칙(P3)
 - [ ] 콘솔에 빨간 에러가 없다
 - [ ] **진행 체크박스 3개가 폰 폭에서 한 줄에 들어간다** — 넘치면 wrap 되고 가로 스크롤은 안 생긴다 (P3)
@@ -133,7 +145,7 @@ localStorage.setItem('kelly2y',JSON.stringify(s)); location.reload();
 
 - [ ] `+ 후보 등록` → 모달이 뜨고, **배경을 클릭하면 닫힌다**
 - [ ] 이름만 넣고 `검토중으로 등록` → 목록에 `0일`로 나타난다 (날짜 입력란은 없는 게 정상)
-- [ ] TSMC의 `검증` → 모달에 당시 주가·트리거가 보이고,
+- [ ] Broadcom의 `검증` → 모달에 당시 주가·트리거가 보이고,
       하단에 **"TOOL 03의 r·N 가정을 재검토하세요"** 문구가 있다
 - [ ] 현재가 `310`, `기각이 틀렸다` 로 저장 → 카드가 `$210 → $310 (+48%)` 로 바뀐다
 - [ ] 검토중 항목의 `편입` → 종목 추가 폼으로 스크롤되고 종목명이 채워진다
