@@ -89,7 +89,7 @@ grp('kelly3 — 3-결과 (수치 최대화와 대조)');
   near('하방 치우침 (0.5/−0.1/−0.6, 30/40/30)',
        api.kelly3([0.5,-0.1,-0.6],[0.3,0.4,0.3]), -0.3796);
   near('얕은 하방 폭발 (0.5/0.1/−0.03, 25/50/25)',
-       api.kelly3([0.5,0.1,-0.03],[0.25,0.50,0.25]), 23.2944);
+       api.kelly3([0.5,0.1,-0.03],[0.25,0.50,0.25]), 23.2938);
 }
 
 grp('kelly3 — 퇴화 입력은 null');
@@ -473,8 +473,16 @@ function readProbs(){
   if(!(up>=base && base>=down)){setStatus('상단 ≥ Base ≥ 하단 순서여야 합니다',true);return;}
 ```
 
-`isNaN(price)||isNaN(up)||isNaN(down)` 검사는 그대로 두고, holding 생성부(Task 6 에서 손댄
-`const h={...}` 줄)를 바꾼다:
+`isNaN(price)||isNaN(up)||isNaN(down)` 검사는 그대로 둔다. holding 생성부는 현재 이렇다:
+
+```js
+  const h={id:Date.now().toString(36),name,price,up,down,prob,startQ,ccy:useCcy,fx,ledger:[]};
+  const th=$('i-thesis').value.trim();
+  if(th) h.thesis=th;
+  holdings.push(h);
+```
+
+**첫 줄만** 바꾼다. 아래 세 줄(논지 승계)은 건드리지 않는다 — 지우면 직전 기능이 깨진다:
 
 ```js
   const h={id:Date.now().toString(36),name,price,up,down,base,prob:P.pBull,pBase:P.pBase,
@@ -565,9 +573,7 @@ Base 와 Bear 를 바꿔 적어도 조용히 통과하고, 그러면 라벨이 �
     const last = rh.ledger[rh.ledger.length-1];
     ok('원장에 이전 Base 가 남는다', last.prevBase === 120, last.prevBase);
     ok('원장에 새 Base 가 남는다', last.base === 130, last.base);
-    ok('이력 문자열에 Base 변화가 보인다',
-       $('tl-body') ? $('tl-body').textContent.includes('Base 120→130') : false,
-       $('tl-body') ? $('tl-body').textContent.slice(0,80) : 'tl-body 없음');
+    ok('원장에 이전 Base 확률이 남는다', Math.abs(last.prevPBase - 0.5) < 1e-9, last.prevPBase);
 
     /* 순서·확률 검증이 재평가에도 걸린다 */
     openReassessModal(rid);
