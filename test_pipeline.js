@@ -30,7 +30,8 @@ function constOf(n) {
 const alloc = new Function('var holdings=[], candidates=[];\n' + [
   constOf('MAX_SINGLE'), constOf('THIN_DOWNSIDE'),
   grab('isThesisReject'), grab('livePlanHoldings'), grab('kelly3'), grab('kellyOf'), grab('compute'),
-  'return { compute, kellyOf, kelly3, setState(h, c){ holdings = h; candidates = c; } };'
+  grab('parseQ'), grab('qToStr'), grab('advanceStartQ'),
+  'return { compute, kellyOf, kelly3, advanceStartQ, setState(h, c){ holdings = h; candidates = c; } };'
 ].join('\n'))();
 
 let pass = 0, fail = 0;
@@ -305,6 +306,40 @@ grp('상한 — rel × equityScale 항등식 (하위 렌더가 이 값을 쓴다
      r.pos.reduce((s,x)=>s+x.rel*r.equityScale,0), r.equityScale);
   eq('어느 종목도 상한을 못 넘는다',
      r.pos.every(x=>x.rel*r.equityScale <= CAP + 1e-9), true);
+}
+
+/* ---- advanceStartQ: 첫 매수 전이고 시작 분기가 지났으면 현재 분기로 당긴다 (§7-D26) ----
+   버그였던 것: 일지 잠금은 h.startQ 를, 금액 계산(remainingPace)은 currentQGuess() 를 봤다.
+   startQ=2026Q1 인 종목을 8월에 열면 "남은 분기 7칸"으로 금액을 나누면서 기록은 Q1 에만
+   할 수 있었고, 거기 기록하면 quarter:'2026Q1' + date:'2026-08-13' 이라는 모순된 항목이
+   저장됐다. 두 코드가 같은 기준을 보게 만드는 것이 수정의 핵심이다. */
+grp('advanceStartQ');
+{
+  const buy  = [{type:'buy', shares:1}];
+  const hold = (startQ, ledger) => ({id:'x', startQ, ledger: ledger||[]});
+
+  eq('지난 분기 + 매수 없음 → 현재 분기로 당긴다',
+     alloc.advanceStartQ(hold('2026Q1'), '2026Q2'), '2026Q2');
+  eq('여러 분기 지났어도 현재 분기까지만',
+     alloc.advanceStartQ(hold('2025Q2'), '2026Q2'), '2026Q2');
+
+  eq('매수가 있으면 안 건드린다 (과거를 왜곡하지 않는다)',
+     alloc.advanceStartQ(hold('2026Q1', buy), '2026Q2'), '2026Q1');
+  eq('보류·매도만 있어도 매수가 없으면 당긴다',
+     alloc.advanceStartQ(hold('2026Q1', [{type:'hold'}]), '2026Q2'), '2026Q2');
+
+  eq('현재 분기면 그대로', alloc.advanceStartQ(hold('2026Q2'), '2026Q2'), '2026Q2');
+  eq('미래 시작은 안 당긴다 (의도적으로 나중에 시작하는 계획)',
+     alloc.advanceStartQ(hold('2026Q4'), '2026Q2'), '2026Q4');
+
+  eq('startQ 가 깨졌으면 그대로 둔다', alloc.advanceStartQ(hold('쓰레기'), '2026Q2'), '쓰레기');
+  eq('startQ 가 없으면 그대로 둔다', alloc.advanceStartQ(hold(undefined), '2026Q2'), undefined);
+  eq('현재 분기 문자열이 깨졌으면 그대로 둔다',
+     alloc.advanceStartQ(hold('2026Q1'), 'nope'), '2026Q1');
+
+  /* 연도 경계 — y*4+q 인덱스가 해를 넘어 단조 증가해야 한다 */
+  eq('연말→연초 경계', alloc.advanceStartQ(hold('2025Q4'), '2026Q1'), '2026Q1');
+  eq('연초 시작이 연말 현재보다 과거', alloc.advanceStartQ(hold('2026Q1'), '2026Q4'), '2026Q4');
 }
 
 /* ---- stageOf ---- */

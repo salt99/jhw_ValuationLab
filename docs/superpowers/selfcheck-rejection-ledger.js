@@ -665,6 +665,48 @@
        (cards.find(function (c) { return c.nm === '__색cB'; }) || {}).col === 'rgba(0, 0, 0, 0)',
        (cards.find(function (c) { return c.nm === '__색cB'; }) || {}).col);
 
+    /* ---------- 26. 시작 분기 이동 — load() 경로를 실제로 태운다 (§7-D26) ----------
+       버그였던 것: 일지 잠금은 h.startQ 를, 금액 계산(remainingPace)은 currentQGuess() 를
+       봐서 "남은 7칸으로 금액을 나누면서 기록은 지난 Q1 에만 되는" 상태가 나왔다. 거기
+       기록하면 quarter 와 date 가 서로 다른 분기를 가리키는 항목이 저장된다.
+       advanceStartQ 단위 검사는 test_pipeline.js 에 있고, 여기서는 load() 가 그것을
+       실제로 부르고 저장까지 하는지를 본다 — 그 호출이 빠지면 단위 검사는 통과한다.
+       localStorage 는 이 스크립트 맨 끝 finally 에서 원상복구된다. */
+    const staleQ = (function () {          // 현재 분기보다 두 칸 앞선(=지난) 분기
+      const p = parseQ(currentQGuess());
+      const idx = p.y * 4 + (p.q - 1) - 2;
+      return qToStr(Math.floor(idx / 4), (idx % 4) + 1);
+    })();
+    localStorage.setItem(KEY, JSON.stringify({
+      v: 5, amtFixedUSD: true, rejIntroDate: Date.now(), candidates: [],
+      usdHolding: 100000, krwHolding: 0, cashLog: [], baseFx: 1500,
+      holdings: [
+        { id:'sq1', name:'__시작이동', price:100, up:200, base:100, pBase:0, down:50, prob:0.6,
+          startQ: staleQ, ccy:'USD', fx:1, ledger:[] },
+        { id:'sq2', name:'__매수있음', price:100, up:200, base:100, pBase:0, down:50, prob:0.6,
+          startQ: staleQ, ccy:'USD', fx:1,
+          ledger:[{ id:'e1', type:'buy', quarter:staleQ, date:'2026-01-15', shares:5, price:100, amount:500 }] }
+      ]
+    }));
+    load();
+
+    const moved = holdings.find(h => h.id === 'sq1');
+    const kept  = holdings.find(h => h.id === 'sq2');
+    ok('첫 매수 전이면 load() 가 시작 분기를 현재로 당긴다',
+       moved.startQ === currentQGuess(), staleQ + ' → ' + moved.startQ);
+    ok('매수 기록이 있으면 시작 분기를 안 건드린다',
+       kept.startQ === staleQ, staleQ + ' → ' + kept.startQ);
+    ok('당긴 값이 localStorage 에 저장된다 (화면과 저장본이 같은 말을 한다)',
+       (JSON.parse(localStorage.getItem(KEY)).holdings.find(h => h.id === 'sq1') || {}).startQ
+         === currentQGuess(),
+       (JSON.parse(localStorage.getItem(KEY)).holdings.find(h => h.id === 'sq1') || {}).startQ);
+
+    /* 이 버그의 본질 — 두 코드가 같은 분기를 봐야 한다 */
+    const pace = remainingPace(moved, 30000);
+    ok('금액 계산의 남은 분기와 일지 8칸이 일치한다', pace.remainingQ === 8, pace.remainingQ);
+
+    viewMode = 'alloc';
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);

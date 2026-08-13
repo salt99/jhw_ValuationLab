@@ -31,7 +31,11 @@ const DEMO = process.argv.includes('--demo');
 
      주식 91.4% · 채권 8.6%   (원금 $100,000)
 
-   즉 5색 · 개별 상한 · 채권 구간 · 보류 종목이 한 번에 렌더된다. */
+   즉 5색 · 개별 상한 · 채권 구간 · 보류 종목이 한 번에 렌더된다.
+
+   startQ 만은 고정값이 아니라 currentQGuess() 다. 지난 분기를 박아두면 앱이 첫 매수 전
+   시작 분기를 현재로 당기는 동작(§7-D26)과 어긋나 "8월인데 Q1 시작" 화면이 나온다.
+   배분표는 startQ 와 무관하므로 이것만 움직여도 기준은 유지된다. */
 const demoScript = [
   '(function(){',
   '  var D=864e5, n=Date.now();',
@@ -39,17 +43,17 @@ const demoScript = [
   '  totalCapital=100000;',
   '  holdings=[',
   '    {id:"h1",name:"TSMC",  price:210, up:420, base:300, down:160,prob:0.50,pBase:0.42,',
-  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"파운드리 독점 · 3nm 전환",ledger:[]},',
+  '     startQ:currentQGuess(),ccy:"USD",fx:1,thesis:"파운드리 독점 · 3nm 전환",ledger:[]},',
   '    {id:"h2",name:"Costco",price:920, up:1400,base:1150,down:700,prob:0.25,pBase:0.35,',
-  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"멤버십 갱신율",ledger:[]},',
+  '     startQ:currentQGuess(),ccy:"USD",fx:1,thesis:"멤버십 갱신율",ledger:[]},',
   '    {id:"h3",name:"Visa",  price:340, up:560, base:440, down:260,prob:0.25,pBase:0.35,',
-  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"결제 네트워크 효과",ledger:[]},',
+  '     startQ:currentQGuess(),ccy:"USD",fx:1,thesis:"결제 네트워크 효과",ledger:[]},',
   '    {id:"h4",name:"ASML",  price:780, up:1300,base:1000,down:600,prob:0.25,pBase:0.35,',
-  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"EUV 독점",ledger:[]},',
+  '     startQ:currentQGuess(),ccy:"USD",fx:1,thesis:"EUV 독점",ledger:[]},',
   '    {id:"h5",name:"Novo",  price:58,  up:105, base:80,  down:42, prob:0.22,pBase:0.38,',
-  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"GLP-1 파이프라인",ledger:[]},',
+  '     startQ:currentQGuess(),ccy:"USD",fx:1,thesis:"GLP-1 파이프라인",ledger:[]},',
   '    {id:"h6",name:"Adyen", price:1400,up:2600,          down:900,prob:0.30,',
-  '     startQ:"2026Q1",ccy:"USD",fx:1,thesis:"",ledger:[]}];',
+  '     startQ:currentQGuess(),ccy:"USD",fx:1,thesis:"",ledger:[]}];',
   '  candidates=[',
   '    {id:"d1",name:"Ferrari",status:"reviewing",startDate:iso(n-70*D)},',
   '    {id:"d2",name:"Hermes",status:"reviewing",startDate:iso(n-20*D)},',

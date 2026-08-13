@@ -883,6 +883,17 @@ function qLabel(y,q){ // 발표 시점 대략 월
   const months={1:'4~5월',2:'7~8월',3:'10~11월',4:'익년 1~2월'};
   return `${y}년 ${q}분기 실적 (${months[q]})`;
 }
+/* 첫 매수 전이고 시작 분기가 지났으면 현재 분기로 당긴다 (§7-D26).
+   일지 잠금은 startQ 를, 금액 계산(remainingPace)은 currentQGuess() 를 봤다 —
+   두 기준이 어긋나면 "남은 7칸으로 금액을 나누면서 기록은 Q1 에만 되는" 상태가 되고,
+   거기 기록하면 quarter 와 date 가 다른 분기를 가리키는 항목이 저장된다.
+   매수 기록이 있으면 손대지 않는다. 그때부터는 왜곡할 과거가 생기기 때문이다. */
+function advanceStartQ(h, nowKey){
+  if((h.ledger||[]).some(e=>e.type==='buy')) return h.startQ;
+  const s=parseQ(h.startQ), n=parseQ(nowKey);
+  if(!s||!n) return h.startQ;
+  return (s.y*4+s.q) < (n.y*4+n.q) ? nowKey : h.startQ;
+}
 function currentQGuess(){
   const now=new Date(); const m=now.getMonth()+1;
   let q = m<=3?4:m<=6?1:m<=9?2:3; // 발표 지연 반영 대략
@@ -1715,11 +1726,20 @@ function load(){try{const r=localStorage.getItem(KEY);if(r){const d=JSON.parse(r
   // 아무도 생각한 적 없는 숫자가 목표 배분을 움직이는 것보다 빈 칸이 정직하다.
   holdings.forEach(h=>{ if(!h.ledger) h.ledger=[]; if(!h.startQ) h.startQ=currentQGuess(); if(!h.ccy) h.ccy='KRW'; if(!h.fx) h.fx=(h.ccy==='USD'?1400:1);
     h.ledger.forEach(e=>{ if(e.fx===undefined) e.fx=(h.ccy==='USD'?h.fx:1); }); });
+  // 아직 시작 안 한 계획의 시작 분기를 현재 분기로 당긴다 (§7-D26).
+  // 저장까지 한다 — 화면만 당기고 저장값을 두면 '2026Q1 시작' 헤더와 Q2 부터인 일정이
+  // 서로 다른 말을 한다. 매수가 하나라도 있으면 advanceStartQ 가 손대지 않는다.
+  const nowQ=currentQGuess();
+  const advanced=holdings.filter(h=>{
+    const nq=advanceStartQ(h,nowQ);
+    if(nq===h.startQ) return false;
+    h.startQ=nq; return true;
+  });
   const mig = migrateCandidates(d, Date.now());
   candidates = mig.candidates;
   rejIntroDate = mig.rejIntroDate;
   lastBackup = d.lastBackup||null;
-  if(ver<2 || !d.amtFixedUSD || mig.needsSave) save(); // persist migration (금액 교정 또는 rejIntroDate 최초 기록)
+  if(ver<2 || !d.amtFixedUSD || mig.needsSave || advanced.length) save(); // persist migration (금액 교정 · rejIntroDate 최초 기록 · 시작 분기 이동)
   dirtySinceBackup = false;   // 방금 로드 = 저장본과 동일 (마이그레이션 저장 후에도 초기화)
 }}catch(e){holdings=[];}}
 
