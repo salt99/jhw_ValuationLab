@@ -15,6 +15,12 @@
     --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
     /* ---- per-tool accent (민트) ---- */
     --accent:#00d4a0; --accent-dim:#0a3d33;
+    /* 종목 식별색 — 배분바 세그먼트와 카드 왼쪽 띠에 같은 색이 붙는다.
+       조건 셋을 만족하도록 골랐다: 세그먼트 글자(#04140f) 대비 7.3:1 이상,
+       서로 색차 ΔE 38 이상, 그리고 의미색(--warn·--bad·--cash)과 ΔE 33 이상.
+       앰버·빨강 계열을 뺀 이유가 마지막 조건이다 — 종목 색이 경고로 읽히면 안 된다.
+       순서도 인접 색차가 최대가 되게 배열했다(최소 ΔE 87.8). */
+    --h1:#00d4a0; --h2:#b98cf0; --h3:#9ad84e; --h4:#f37ab5; --h5:#3fd7e8;
     --cash:#6a9fe8; --cash-dim:#16283f;
   }
   *{box-sizing:border-box;}
@@ -66,8 +72,15 @@
   /* allocation donut-ish bar */
   .allocbar-full{display:flex;height:26px;border-radius:8px;overflow:hidden;margin:4px 0 12px;border:1px solid var(--line);}
   .allocbar-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--mono);color:#04140f;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap;}
+  /* 종목 세그먼트가 전부 같은 --accent 라 인접하면 한 덩어리로 보인다.
+     inset 그림자라 박스 모델에 영향이 없다 — gap/border 를 쓰면 flex 가 세그먼트를
+     축소시켜 퍼센트 너비(=목표비중)가 미세하게 왜곡된다. */
+  .allocbar-seg + .allocbar-seg{box-shadow:inset 2px 0 0 var(--line);}
 
-  .hold{border-top:1px solid var(--line);padding:12px 0;}
+  /* 왼쪽 띠가 배분바 세그먼트와 같은 색이다. 기본을 transparent 로 두어
+     색이 없는 종목(켈리 보류·음수)도 들여쓰기가 어긋나지 않는다. */
+  .hold{border-top:1px solid var(--line);padding:12px 0 12px 9px;
+    border-left:3px solid transparent;}
   .hold:first-of-type{border-top:none;}
   .hold-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
   .hold-name{font-size:14px;font-weight:600;}
@@ -1270,12 +1283,17 @@ function render(){
   $('s-equity').textContent=fmtPct(equityScale);
   $('s-cash').textContent=fmtPct(cashWeight);
 
+  // 종목 식별색: 배분바와 카드가 같은 맵을 쓴다.
+  // 인덱스로 각자 매기면 어긋난다 — 바는 pos(켈리 양수만), 카드는 rows(보류·음수 포함)를 돈다.
+  const colorOf={};
+  pos.forEach((r,i)=>{ colorOf[r.h.id]=`var(--h${(i%5)+1})`; });
+
   // full allocation bar (equity segments + cash)
   const bar=$('allocbar');
   if(pos.length && equityScale>0){
     let segs=pos.map(r=>{
       const w=r.rel*equityScale;
-      return `<div class="allocbar-seg" style="width:${w*100}%;background:var(--accent);" title="${r.h.name}">${w>0.08?escapeHtml(r.h.name):''}</div>`;
+      return `<div class="allocbar-seg" style="width:${w*100}%;background:${colorOf[r.h.id]};" title="${r.h.name}">${w>0.08?escapeHtml(r.h.name):''}</div>`;
     }).join('');
     segs+=`<div class="allocbar-seg" style="width:${cashWeight*100}%;background:var(--cash);color:#04140f;">${cashWeight>0.1?'채권 '+fmtPct(cashWeight,0):''}</div>`;
     bar.innerHTML=segs; bar.style.display='flex';
@@ -1314,7 +1332,7 @@ function render(){
       const reLine = lastRe
         ? `<div class="hold-reassess">최근 재평가 ${lastRe.quarter||lastRe.date||''}: 상단 ${fmtNum(lastRe.up)} · 하단 ${fmtNum(lastRe.down)} · 승률 ${Math.round(lastRe.prob*100)}%</div>`
         : '';
-      return `<div class="hold">
+      return `<div class="hold"${colorOf[h.id]?` style="border-left-color:${colorOf[h.id]}"`:''}>
         <div class="hold-top">
           <div style="flex:1;">
             <div class="hold-name">${escapeHtml(h.name)}</div>

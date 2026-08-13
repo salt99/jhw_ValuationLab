@@ -629,6 +629,42 @@
        f5Banners.length === 1 && f5Banners[0].textContent.includes('논지 훼손'),
        f5Banners.length ? f5Banners[0].textContent.trim() : '배너 없음');
 
+    /* ---------- 25. 종목 식별색 — 배분바와 카드가 같은 색을 쓴다 ----------
+       바는 pos(켈리 양수만)를, 카드는 rows(보류·음수 포함)를 돈다. 각자 인덱스로
+       색을 매기면 보류 종목이 끼는 순간 그 뒤가 통째로 밀린다. 색이 밀려도 예외가
+       안 나고 화면만 조용히 거짓말하므로 자동 검사가 아니면 못 잡는다. */
+    const noBase = { id:'cB', name:'__색cB', price:100, up:200, down:50, prob:0.6,
+                     startQ:currentQGuess(), ccy:'USD', fx:1, ledger:[] };  // base 없음 → 켈리 보류
+    const mkC = (id) => ({ id, name:'__색'+id, price:100, up:200, base:100, pBase:0,
+                           down:50, prob:0.6, startQ:currentQGuess(), ccy:'USD', fx:1, ledger:[] });
+    holdings = [mkC('cA'), noBase, mkC('cC'), mkC('cD')];
+    viewMode = 'alloc';
+    render();
+
+    const barColor = {};
+    document.querySelectorAll('#allocbar .allocbar-seg').forEach(function (sg) {
+      const nm = sg.getAttribute('title');
+      if (nm) barColor[nm] = getComputedStyle(sg).backgroundColor;
+    });
+    const cards = [...document.querySelectorAll('#body .hold')].map(function (c) {
+      return { nm: c.querySelector('.hold-name').textContent,
+               col: getComputedStyle(c).borderLeftColor };
+    });
+
+    ok('보류 종목은 배분바에 없다', barColor['__색cB'] === undefined, Object.keys(barColor).join());
+    ok('배분바 종목마다 색이 다르다',
+       new Set(Object.values(barColor)).size === Object.keys(barColor).length,
+       JSON.stringify(barColor));
+    const mismatched = cards.filter(function (c) {
+      return barColor[c.nm] ? barColor[c.nm] !== c.col : c.col !== 'rgba(0, 0, 0, 0)';
+    });
+    ok('카드 왼쪽 띠가 배분바 색과 일치한다 (보류 종목이 끼어도)',
+       mismatched.length === 0,
+       mismatched.map(function (c) { return c.nm + ' 카드=' + c.col + ' 바=' + barColor[c.nm]; }).join(' / '));
+    ok('보류 종목 카드에는 색이 안 붙는다',
+       (cards.find(function (c) { return c.nm === '__색cB'; }) || {}).col === 'rgba(0, 0, 0, 0)',
+       (cards.find(function (c) { return c.nm === '__색cB'; }) || {}).col);
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
