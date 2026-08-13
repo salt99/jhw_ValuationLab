@@ -28,7 +28,7 @@ function constOf(n) {
   return 'const ' + n + ' = ' + mm[1] + ';';
 }
 const alloc = new Function('var holdings=[], candidates=[];\n' + [
-  constOf('HALF'), constOf('MAX_SINGLE'), constOf('THIN_DOWNSIDE'),
+  constOf('MAX_SINGLE'), constOf('THIN_DOWNSIDE'),
   grab('isThesisReject'), grab('livePlanHoldings'), grab('kelly3'), grab('kellyOf'), grab('compute'),
   'return { compute, kellyOf, kelly3, setState(h, c){ holdings = h; candidates = c; } };'
 ].join('\n'))();
@@ -193,10 +193,10 @@ grp('compute — posSum >= 1 (목표가 커진다)');
   alloc.setState([HOLD_A, HOLD_B], []);
   const before = alloc.compute();
   eq('posSum = 3.13333…', before.posSum, F_A + F_B);
-  eq('posSum>=1이라 equityScale은 HALF에 걸린다', before.equityScale, 0.5);
+  eq('posSum>=1이라 equityScale은 100%에 걸린다', before.equityScale, 1);
   eq('청산 종목도 등재 전에는 계획에 있다', before.pos.some(r=>r.h.id==='A'), true);
   const tB0 = before.pos.find(r=>r.h.id==='B').rel * before.equityScale;
-  eq('등재 전 B 목표비중 = (2.3333/3.1333)×0.5 = 0.372340…', tB0, (F_B/(F_A+F_B))*0.5);
+  eq('등재 전 B 목표비중 = 2.3333/3.1333 = 0.744680…', tB0, F_B/(F_A+F_B));
 
   alloc.setState([HOLD_A, HOLD_B], [PUNCH_A]);
   const after = alloc.compute();
@@ -204,27 +204,27 @@ grp('compute — posSum >= 1 (목표가 커진다)');
   eq('등재 후 A가 pos에서 빠진다', after.pos.every(r=>r.h.id!=='A'), true);
   eq('등재 후 B의 rel = 1', after.pos.find(r=>r.h.id==='B').rel, 1);
   const tB1 = after.pos.find(r=>r.h.id==='B').rel * after.equityScale;
-  eq('등재 후 B 목표비중 = 1×0.5 = 0.5', tB1, 0.5);
+  eq('등재 후 B 목표비중 = 1×1 = 1', tB1, 1);
   eq('B 목표가 커졌다', tB1 > tB0, true);
 }
 
 grp('compute — posSum < 1 (목표가 안 변한다)');
 {
   /* A2: p=0.35 → f = 0.35/0.5 - 0.65/1.0 = 0.05   B2: p=0.36 → f = 0.72-0.64 = 0.08
-     posSum = 0.13 < 1 → equityScale = 0.13×0.5. rel 증가와 equityScale 감소가 상쇄된다. */
+     posSum = 0.13 < 1 → equityScale = 0.13. rel 증가와 equityScale 감소가 상쇄된다. */
   const A2 = Object.assign({}, HOLD_A, {prob:0.35});
   const B2 = Object.assign({}, HOLD_B, {id:'B2', up:200, down:50, prob:0.36});
   alloc.setState([A2, B2], []);
   const before = alloc.compute();
   eq('posSum = 0.13', before.posSum, 0.13);
-  eq('equityScale = posSum×HALF', before.equityScale, 0.13*0.5);
+  eq('equityScale = posSum (풀 켈리)', before.equityScale, 0.13);
   const t0 = before.pos.find(r=>r.h.id==='B2').rel * before.equityScale;
-  eq('등재 전 B2 목표비중 = (0.08/0.13)×0.065 = 0.04', t0, 0.04);
+  eq('등재 전 B2 목표비중 = (0.08/0.13)×0.13 = 0.08', t0, 0.08);
 
   alloc.setState([A2, B2], [PUNCH_A]);
   const after = alloc.compute();
   const t1 = after.pos.find(r=>r.h.id==='B2').rel * after.equityScale;
-  eq('등재 후 B2 목표비중 = 1×(0.08×0.5) = 0.04 (불변)', t1, 0.04);
+  eq('등재 후 B2 목표비중 = 1×0.08 = 0.08 (불변)', t1, 0.08);
   eq('목표가 줄지 않았다', t1 >= t0 - 1e-9, true);
 }
 

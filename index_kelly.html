@@ -295,7 +295,7 @@
 <div class="wrap">
 <header>
   <h1>켈리 · 분할매수 플래너</h1>
-  <div class="tagline"><b>단기채권 100%</b>에서 출발. 종목의 상단·하단·승률을 넣으면 켈리 비율(Half-Kelly)로 <b>목표 포트폴리오</b>를 잡고, <b>8분기 분할매수</b> 매매일지를 만듭니다. 매 분기 실적발표가 체크포인트이며, 채권은 매수 대기 실탄입니다.</div>
+  <div class="tagline"><b>단기채권 100%</b>에서 출발. 종목의 상단·하단·승률을 넣으면 켈리 비율(풀 켈리)로 <b>목표 포트폴리오</b>를 잡고, <b>8분기 분할매수</b> 매매일지를 만듭니다. 매 분기 실적발표가 체크포인트이며, 채권은 매수 대기 실탄입니다.</div>
 </header>
 
 <div class="backup-bar" id="backup-bar">
@@ -386,7 +386,7 @@
 
 <div class="summary">
   <div class="sbox"><div class="lbl">종목 수</div><div class="val" id="s-count">0</div><div class="sub">매수 대상</div></div>
-  <div class="sbox"><div class="lbl">주식 목표</div><div class="val" id="s-equity">0%</div><div class="sub">Half-Kelly</div></div>
+  <div class="sbox"><div class="lbl">주식 목표</div><div class="val" id="s-equity">0%</div><div class="sub">풀 켈리</div></div>
   <div class="sbox cash"><div class="lbl">단기채권</div><div class="val" id="s-cash">100%</div><div class="sub">대기 실탄</div></div>
 </div>
 
@@ -415,7 +415,7 @@
 <div class="card">
   <div class="note">
     <b>켈리 f</b> = p/a − q/b · a=하락손실률, b=상승이익률(현재가 기준)<br>
-    <b>주식 목표</b> = (양수 켈리 정규화) × <b>½ (Half-Kelly)</b>. 추정 오차를 감안한 안전계수. 나머지는 채권.<br>
+    <b>주식 목표</b> = 양수 켈리 합(<b>풀 켈리</b>, 100% 상한). 켈리 합이 1을 넘으면 주식 100%·채권 0%가 된다. 나머지는 채권.<br>
     <b>개별 종목 상한 40%</b> · 켈리가 과도해도 단일 종목이 포트의 40%를 넘지 않게 제한(초과분은 다른 종목에 비례 재분배). <b>하방 검증</b>: 하단이 현재가 −10% 이내면 켈리가 폭증하므로 경고 — 실제 최악의 하락을 반영해야 함.<br>
     <b>8분기 분할</b> · 시작 분기 포함 매 실적발표가 체크포인트. 각 분기에 <b>매수·보류·매도</b>를 근거와 함께 기록. 보류분은 자연히 이월, 매도는 피셔 3규율로 사유 기록.<br>
     <span style="color:var(--warn)">⚠️ 켈리는 p·목표가가 정확하다고 가정합니다. 실제론 추정치 — 이 도구는 사고 보조이지 매매 지시가 아닙니다.</span>
@@ -824,7 +824,6 @@ let baseFx=1500;      // 원화 환산용 참고 환율 (표시 전용)
 let viewMode='alloc'; // 'alloc' | 'journal'
 let activeHold=null;  // id of holding whose journal is open
 let expandedJournal={}; // {holdId:true} — 매매일지에서 펼쳐진 종목 (기본 접힘)
-const HALF=0.5;
 const $=id=>document.getElementById(id);
 
 /* read numeric value from an input, stripping thousands commas */
@@ -961,14 +960,14 @@ function fmtMoney(v){
 /* 원화 참고 환산 (USD 계좌일 때만 의미) */
 function refKRW(usd){ return baseCcy==='USD' ? `≈ ₩${Math.round(usd*baseFx).toLocaleString('ko-KR')}` : ''; }
 
-/* engine: positive kelly -> normalize -> ×Half = equity target; rest = bonds */
+/* engine: positive kelly -> normalize -> equity target (full kelly); rest = bonds */
 function compute(){
   const rows=livePlanHoldings(holdings,candidates).map(h=>({h,k:kellyOf(h)}));
   const pos=rows.filter(r=>r.k.f&&r.k.f>0);
   const posSum=pos.reduce((s,r)=>s+r.k.f,0);
   // 정규화: rel = f / 합 (주식 배분 내 상대비중, 합=1)
   pos.forEach(r=>r.rel=posSum>0?r.k.f/posSum:0);
-  const equityScale=Math.min(posSum,1)*HALF;   // 주식 총비중
+  const equityScale=Math.min(posSum,1);   // 주식 총비중 (풀 켈리, §7-D22)
   const cashWeight=Math.max(0,1-equityScale);
   // 개별 종목 상한: 최종 목표비중(rel×equityScale)이 MAX_SINGLE을 넘으면 제한.
   // rel 상한 = MAX_SINGLE/equityScale. 단 종목 수가 적어 상한×n<1이면 상한 무의미(균등 불가피) → 스킵.
@@ -1654,7 +1653,7 @@ function render(){
   if(cappedN) w.push(`개별 종목 상한(${Math.round(MAX_SINGLE*100)}%) 적용 ${cappedN}개 — 켈리가 과도해 비중을 제한했습니다.`);
   if(neg) w.push(`켈리 음수 ${neg}개 제외 — 이 가격엔 매수 부적합.`);
   if(inv) w.push(`목표가 오류 ${inv}개.`);
-  if(posSum>1) w.push(`정규화 전 켈리 합 ${fmtPct(posSum)} — Half-Kelly로 이미 절반 적용됨.`);
+  if(posSum>1) w.push(`정규화 전 켈리 합 ${fmtPct(posSum)} — 100%로 잘렸습니다(주식 100%·채권 0%). 풀 켈리는 추정 오차에 취약합니다.`);
   if(totalCapital===0) w.push(`총 원금을 입력하면 금액 단위 매매일지가 나옵니다.`);
   $('warnbox').style.display=w.length?'block':'none';
   $('warnbox').innerHTML=w.join('<br>');
