@@ -961,7 +961,7 @@ CSS 를 `.prob-in` 정의 근처에 추가한다:
 
 - [ ] **Step 5: 통과를 확인한다**
 
-Run: `node test_pipeline.js` → `OK  97 pass` (90 + 신규 7)
+Run: `node test_pipeline.js` → `OK  98 pass` (90 + 신규 8: 회귀 7 + 퇴화근 1)
 selfcheck → `전부 통과 · 126건` (124 + 신규 2)
 
 - [ ] **Step 6: 커밋**
@@ -988,7 +988,7 @@ git commit -m "feat(kelly): flag holdings missing a base scenario"
 ```sh
 node test_pipeline.js
 ```
-Expected: `OK  97 pass`
+Expected: `OK  98 pass`
 
 selfcheck 는 Task 3 Step 2 절차로 돌린다.
 Expected: `전부 통과 · 126건`
@@ -1094,7 +1094,7 @@ git commit -m "docs: record three-scenario kelly as D20"
 
 | 무엇 | 어떻게 | 기대 |
 |---|---|---|
-| 순수 수식 | `node test_pipeline.js` | `OK  97 pass` |
+| 순수 수식 | `node test_pipeline.js` | `OK  98 pass` |
 | DOM 경로 | headless Chrome + `_selfcheck.html` | `전부 통과 · 126건` |
 | 테스트가 무는가 | 돌연변이 A·B (Task 7 Step 2) | 각각 지정된 항목 FAIL |
 | 레이아웃·실데이터 | 폰 실기 (자동 검사 불가) | 체크리스트 2단계 |
