@@ -415,8 +415,8 @@
 <div class="card">
   <div class="note">
     <b>켈리 f</b> = p/a − q/b · a=하락손실률, b=상승이익률(현재가 기준)<br>
-    <b>주식 목표</b> = 양수 켈리 합(<b>풀 켈리</b>, 100% 상한). 켈리 합이 1을 넘으면 주식 100%·채권 0%가 된다. 나머지는 채권.<br>
-    <b>개별 종목 상한 40%</b> · 켈리가 과도해도 단일 종목이 포트의 40%를 넘지 않게 제한(초과분은 다른 종목에 비례 재분배). <b>하방 검증</b>: 하단이 현재가 −10% 이내면 켈리가 폭증하므로 경고 — 실제 최악의 하락을 반영해야 함.<br>
+    <b>주식 목표</b> = 양수 켈리 합(<b>풀 켈리</b>, 100% 상한)에서 개별 상한을 자른 뒤의 합. 나머지는 채권.<br>
+    <b>개별 종목 상한 30%</b> · 한 종목이 포트의 30%를 넘지 않게 제한하고, <b>초과분은 다른 종목이 아니라 채권으로</b> 보낸다. 그래서 종목이 1~2개뿐인 동안에는 주식 비중이 자연히 낮게 유지되고(1종목 30% · 2종목 최대 60%), 종목을 갖출수록 100%에 접근한다. <b>하방 검증</b>: 하단이 현재가 −10% 이내면 켈리가 폭증하므로 경고 — 실제 최악의 하락을 반영해야 함.<br>
     <b>8분기 분할</b> · 시작 분기 포함 매 실적발표가 체크포인트. 각 분기에 <b>매수·보류·매도</b>를 근거와 함께 기록. 보류분은 자연히 이월, 매도는 피셔 3규율로 사유 기록.<br>
     <span style="color:var(--warn)">⚠️ 켈리는 p·목표가가 정확하다고 가정합니다. 실제론 추정치 — 이 도구는 사고 보조이지 매매 지시가 아닙니다.</span>
   </div>
@@ -902,7 +902,7 @@ function nextEarningsAfter(dateStr){
 }
 
 const THIN_DOWNSIDE=0.10;   // 하단이 현재가 대비 10% 이내면 비현실적 (켈리 극단값)
-const MAX_SINGLE=0.40;      // 개별 종목 목표비중 상한 (정규화 후)
+const MAX_SINGLE=0.30;      // 개별 종목 목표비중 상한 (초과분은 채권으로, §7-D23)
 
 function kellyOf(h){
   if(h.base===undefined||h.base===null||h.base===''||h.pBase===undefined||h.pBase===null)
@@ -965,30 +965,18 @@ function compute(){
   const rows=livePlanHoldings(holdings,candidates).map(h=>({h,k:kellyOf(h)}));
   const pos=rows.filter(r=>r.k.f&&r.k.f>0);
   const posSum=pos.reduce((s,r)=>s+r.k.f,0);
-  // 정규화: rel = f / 합 (주식 배분 내 상대비중, 합=1)
-  pos.forEach(r=>r.rel=posSum>0?r.k.f/posSum:0);
-  const equityScale=Math.min(posSum,1);   // 주식 총비중 (풀 켈리, §7-D22)
+  const raw=Math.min(posSum,1);   // 상한 적용 전 주식 노출 (풀 켈리, §7-D22)
+  // 개별 종목 상한: 최종 목표비중을 MAX_SINGLE에서 직접 자른다.
+  // 초과분은 다른 종목이 아니라 채권으로 간다 — 그래야 종목 수와 무관하게 상한이 걸린다(§7-D23).
+  pos.forEach(r=>{
+    const w=posSum>0?r.k.f/posSum*raw:0;
+    r.capped=w>MAX_SINGLE+1e-9;
+    r.w=Math.min(w,MAX_SINGLE);
+  });
+  const equityScale=pos.reduce((s,r)=>s+r.w,0);   // 주식 총비중
   const cashWeight=Math.max(0,1-equityScale);
-  // 개별 종목 상한: 최종 목표비중(rel×equityScale)이 MAX_SINGLE을 넘으면 제한.
-  // rel 상한 = MAX_SINGLE/equityScale. 단 종목 수가 적어 상한×n<1이면 상한 무의미(균등 불가피) → 스킵.
-  if(pos.length>1 && equityScale>0){
-    const relCap=MAX_SINGLE/equityScale;   // rel 기준 상한
-    // 상한이 실현 가능할 때만 적용 (relCap×종목수 >= 1 이어야 재분배 가능)
-    if(relCap<1 && relCap*pos.length>=1){
-      for(let iter=0; iter<30; iter++){
-        const over=pos.filter(r=>r.rel>relCap+1e-9);
-        if(!over.length) break;
-        let excess=0;
-        over.forEach(r=>{ excess+=r.rel-relCap; r.rel=relCap; r.capped=true; });
-        const under=pos.filter(r=>!r.capped && r.rel<relCap-1e-9);
-        const underSum=under.reduce((s,r)=>s+r.rel,0);
-        if(underSum<=0) break;
-        under.forEach(r=>{ r.rel += excess*(r.rel/underSum); });
-      }
-      const relSum=pos.reduce((s,r)=>s+r.rel,0);
-      if(relSum>0) pos.forEach(r=>r.rel=r.rel/relSum);
-    }
-  }
+  // rel = 주식 배분 내 상대비중(합=1). rel×equityScale = 최종 목표비중이 그대로 성립한다.
+  pos.forEach(r=>r.rel=equityScale>0?r.w/equityScale:0);
   const anyCapped=pos.some(r=>r.capped);
   return {rows,pos,posSum,equityScale,cashWeight,anyCapped};
 }
@@ -1650,10 +1638,10 @@ function render(){
   const cappedN=pos.filter(r=>r.capped).length;
   let w=[];
   if(thin) w.push(`⚠ 하방 얕은 종목 ${thin}개 — 하단이 현재가 −10% 이내라 켈리 과대평가. 실제 최악 하락(−20~40%)을 반영하세요.`);
-  if(cappedN) w.push(`개별 종목 상한(${Math.round(MAX_SINGLE*100)}%) 적용 ${cappedN}개 — 켈리가 과도해 비중을 제한했습니다.`);
+  if(cappedN) w.push(`개별 종목 상한(${Math.round(MAX_SINGLE*100)}%) 적용 ${cappedN}개 — 초과분은 다른 종목이 아니라 채권으로 갔습니다.`);
   if(neg) w.push(`켈리 음수 ${neg}개 제외 — 이 가격엔 매수 부적합.`);
   if(inv) w.push(`목표가 오류 ${inv}개.`);
-  if(posSum>1) w.push(`정규화 전 켈리 합 ${fmtPct(posSum)} — 100%로 잘렸습니다(주식 100%·채권 0%). 풀 켈리는 추정 오차에 취약합니다.`);
+  if(posSum>1) w.push(`정규화 전 켈리 합 ${fmtPct(posSum)} — 100%로 잘렸습니다. 풀 켈리는 추정 오차에 취약합니다.`);
   if(totalCapital===0) w.push(`총 원금을 입력하면 금액 단위 매매일지가 나옵니다.`);
   $('warnbox').style.display=w.length?'block':'none';
   $('warnbox').innerHTML=w.join('<br>');

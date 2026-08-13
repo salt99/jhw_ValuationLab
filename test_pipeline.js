@@ -193,10 +193,14 @@ grp('compute — posSum >= 1 (목표가 커진다)');
   alloc.setState([HOLD_A, HOLD_B], []);
   const before = alloc.compute();
   eq('posSum = 3.13333…', before.posSum, F_A + F_B);
-  eq('posSum>=1이라 equityScale은 100%에 걸린다', before.equityScale, 1);
+  /* B의 켈리 몫 0.744680… 은 상한 30% 에 잘린다. 초과분은 A 에게 가지 않고
+     채권으로 빠지므로 equityScale = 0.255319… + 0.30 < 1 이다 (§7-D23). */
+  eq('상한에 잘려 주식이 100% 가 안 된다', before.equityScale, F_A/(F_A+F_B) + 0.30);
   eq('청산 종목도 등재 전에는 계획에 있다', before.pos.some(r=>r.h.id==='A'), true);
   const tB0 = before.pos.find(r=>r.h.id==='B').rel * before.equityScale;
-  eq('등재 전 B 목표비중 = 2.3333/3.1333 = 0.744680…', tB0, F_B/(F_A+F_B));
+  eq('등재 전 B 목표비중 = 상한 0.30', tB0, 0.30);
+  eq('A 는 초과분을 넘겨받지 않는다 (켈리 몫 그대로)',
+     before.pos.find(r=>r.h.id==='A').rel * before.equityScale, F_A/(F_A+F_B));
 
   alloc.setState([HOLD_A, HOLD_B], [PUNCH_A]);
   const after = alloc.compute();
@@ -204,8 +208,10 @@ grp('compute — posSum >= 1 (목표가 커진다)');
   eq('등재 후 A가 pos에서 빠진다', after.pos.every(r=>r.h.id!=='A'), true);
   eq('등재 후 B의 rel = 1', after.pos.find(r=>r.h.id==='B').rel, 1);
   const tB1 = after.pos.find(r=>r.h.id==='B').rel * after.equityScale;
-  eq('등재 후 B 목표비중 = 1×1 = 1', tB1, 1);
-  eq('B 목표가 커졌다', tB1 > tB0, true);
+  eq('등재 후에도 B 목표비중 = 상한 0.30', tB1, 0.30);
+  /* 상한이 양쪽에서 걸리므로 '커진다' 가 아니라 '줄지 않는다' 가 이 국면의 불변식이다.
+     희석 회귀(§7-D18) 자체는 아래 posSum<1 그룹이 잡는다. */
+  eq('B 목표가 줄지 않았다', tB1 >= tB0 - 1e-9, true);
 }
 
 grp('compute — posSum < 1 (목표가 안 변한다)');
@@ -235,6 +241,70 @@ grp('compute — 전부 청산');
   eq('pos 비었다', r.pos.length, 0);
   eq('equityScale 0', r.equityScale, 0);
   eq('cashWeight 1', r.cashWeight, 1);
+}
+
+/* ---- 개별 종목 상한 30%: 초과분은 다른 종목이 아니라 채권으로 (§7-D23) ----
+   구 방식은 상한×종목수 < 1 이면 재분배가 불가능하다며 상한을 통째로 건너뛰었다.
+   그래서 종목이 1~2개인 동안 한 종목이 87~100% 를 받았다 — 피셔식으로 종목을
+   천천히 늘리는 동안 계속 그 상태다. 아래 세 그룹이 그 구간을 직접 잡는다. */
+const CAP = 0.30;
+/* f = p/a − q/b 로 손계산되게 base=price·pBase=0 축퇴형을 쓴다.
+   f=0.8: a=0.5, b=1.0, p=0.6 → 0.6/0.5 − 0.4/1.0 */
+const mkF8 = id => ({id, name:id, price:100, up:200, base:100, pBase:0, down:50, prob:0.6, ledger:[]});
+
+grp('상한 — 종목 1개 (구 방식은 상한이 아예 없었다)');
+{
+  alloc.setState([HOLD_B], []);          // f = 2.33333…
+  const r = alloc.compute();
+  eq('한 종목이라도 상한에서 잘린다', r.pos[0].rel * r.equityScale, CAP);
+  eq('주식 총비중 = 상한', r.equityScale, CAP);
+  eq('나머지는 채권', r.cashWeight, 1 - CAP);
+  eq('capped 플래그가 선다', r.anyCapped, true);
+
+  /* 상한은 천장이지 고정값이 아니다 — 켈리가 작으면 그대로 둔다 */
+  alloc.setState([Object.assign({}, HOLD_A, {prob:0.35})], []);   // f = 0.05
+  const s = alloc.compute();
+  eq('켈리가 작으면 상한이 안 걸린다', s.equityScale, 0.05);
+  eq('작을 땐 capped 아님', s.anyCapped, false);
+}
+
+grp('상한 — 종목 2개 (구 방식의 구멍이 있던 자리)');
+{
+  alloc.setState([HOLD_A, HOLD_B], []);   // 켈리 몫 0.255319… / 0.744680…
+  const r = alloc.compute();
+  const w = id => r.pos.find(x=>x.h.id===id).rel * r.equityScale;
+  eq('쏠린 종목이 상한에서 잘린다', w('B'), CAP);
+  eq('구 방식이면 0.744680… 이었다', w('B') < F_B/(F_A+F_B), true);
+  eq('다른 종목은 켈리 몫 그대로', w('A'), F_A/(F_A+F_B));
+  eq('초과분만큼 채권이 남는다', r.cashWeight, 1 - (F_A/(F_A+F_B) + CAP));
+}
+
+grp('상한 — 켈리가 고르면 상한이 일하지 않는다');
+{
+  /* 동일 종목 3개: 각 몫 1/3 > 0.30 이라 전부 잘린다 → 주식 90% */
+  alloc.setState([mkF8('c1'), mkF8('c2'), mkF8('c3')], []);
+  const r3 = alloc.compute();
+  eq('3종목 균등: 각 0.30', r3.pos[0].rel * r3.equityScale, CAP);
+  eq('3종목 균등: 주식 90%', r3.equityScale, 0.90);
+
+  /* 동일 종목 5개: 각 몫 0.20 < 0.30 → 상한 미작동, 주식 100% */
+  alloc.setState([mkF8('e1'), mkF8('e2'), mkF8('e3'), mkF8('e4'), mkF8('e5')], []);
+  const r5 = alloc.compute();
+  eq('5종목 균등: 각 0.20', r5.pos[0].rel * r5.equityScale, 0.20);
+  eq('5종목 균등: 주식 100%', r5.equityScale, 1);
+  eq('5종목 균등: 채권 0%', r5.cashWeight, 0);
+  eq('5종목 균등: capped 아님', r5.anyCapped, false);
+}
+
+grp('상한 — rel × equityScale 항등식 (하위 렌더가 이 값을 쓴다)');
+{
+  alloc.setState([HOLD_A, HOLD_B, mkF8('c1')], []);
+  const r = alloc.compute();
+  eq('rel 합 = 1', r.pos.reduce((s,x)=>s+x.rel,0), 1);
+  eq('rel×equityScale 합 = equityScale',
+     r.pos.reduce((s,x)=>s+x.rel*r.equityScale,0), r.equityScale);
+  eq('어느 종목도 상한을 못 넘는다',
+     r.pos.every(x=>x.rel*r.equityScale <= CAP + 1e-9), true);
 }
 
 /* ---- stageOf ---- */
