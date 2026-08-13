@@ -153,8 +153,8 @@
        kellyOf()는 원장을 보지 않으므로, 전량 청산해도 켈리가 양수면 계획에 남는다.
        칸 회수 등재가 그 종목을 계획에서 빼는지를 등재 전후로 직접 비교한다. */
     const deadId = '__t_dead';
-    holdings.push({ id: deadId, name: '__TEST_DEAD', price: 100, up: 200, down: 50, prob: 0.6,
-      startQ: currentQGuess(), ccy: 'USD', fx: 1,
+    holdings.push({ id: deadId, name: '__TEST_DEAD', price: 100, up: 200, base: 100, pBase: 0,
+      down: 50, prob: 0.6, startQ: currentQGuess(), ccy: 'USD', fx: 1,
       ledger: [{ type: 'buy',  shares: 3, price: 100, amount: 300, quarter: currentQGuess() },
                { type: 'sell', shares: 3, price: 110, amount: 330, sellReason: 'thesis',
                  quarter: currentQGuess() }] });
