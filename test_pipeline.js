@@ -172,12 +172,14 @@ grp('livePlanHoldings');
 
 /* ---- compute(): 청산 종목 제외와 배분 재정규화 (손계산 대조) ----
    켈리는 원장과 무관하게 price/up/down/prob로만 정해진다.
+   base=price·pBase=0 으로 두면 r_base=0·p_base=0 이라 kelly3 가 옛 2-결과 공식으로 축퇴한다
+   (kelly3 — 2-결과 축퇴 그룹과 같은 방식). 이 손계산 자체는 그대로 유효하다.
    A: a=0.5, b=1.0, p=0.6 → f = 0.6/0.5 - 0.4/1.0 = 0.8
    B: a=0.2, b=0.6, p=0.6 → f = 0.6/0.2 - 0.4/0.6 = 2.33333… */
 const F_A = 0.8, F_B = 0.6/0.2 - 0.4/0.6;
-const HOLD_A = {id:'A', name:'A', price:100, up:200, down:50, prob:0.6,
+const HOLD_A = {id:'A', name:'A', price:100, up:200, base:100, pBase:0, down:50, prob:0.6,
   ledger:[{type:'buy',shares:3,amount:300},{type:'sell',shares:3,amount:330,sellReason:'thesis'}]};
-const HOLD_B = {id:'B', name:'B', price:100, up:160, down:80, prob:0.6, ledger:[]};
+const HOLD_B = {id:'B', name:'B', price:100, up:160, base:100, pBase:0, down:80, prob:0.6, ledger:[]};
 const PUNCH_A = {status:'rejected', rejectReason:'thesis', linkedHoldingId:'A'};
 
 grp('compute — 켈리 손계산');
@@ -308,6 +310,37 @@ grp('kelly3 — 근 선택이 log 정의역 안인가');
   // 정의역 안에서는 도함수가 0 이어야 한다
   const dg=rs.reduce((s,r,i)=>s+ps[i]*r/(1+f*r),0);
   eq('도함수 ≈ 0', Math.round(dg*1e9)/1e9, 0);
+}
+
+/* ---- kellyOf — 3-시나리오 래퍼 ---- */
+grp('kellyOf — err 경로');
+{
+  const H=(o)=>Object.assign({price:100,up:150,base:120,down:70,prob:0.25,pBase:0.5},o);
+  eq('Base 미입력', alloc.kellyOf(H({base:undefined})).err, 'Base 미입력 — 켈리 보류');
+  eq('pBase 미입력', alloc.kellyOf(H({pBase:undefined})).err, 'Base 미입력 — 켈리 보류');
+  eq('순서 위반 (Base < 하단)', alloc.kellyOf(H({base:60})).err, '상단 ≥ Base ≥ 하단이 아닙니다');
+  eq('하방 없음 (전부 현재가 이상)', alloc.kellyOf(H({down:110})).err, '하방 시나리오가 없습니다');
+  eq('확률 합 초과', alloc.kellyOf(H({prob:0.8,pBase:0.5})).err, '확률 합이 1을 넘습니다');
+  eq('퇴화 (p_base=1)', alloc.kellyOf(H({base:100,prob:0,pBase:1})).err, '시나리오가 퇴화했습니다');
+}
+
+grp('kellyOf — 정상 반환');
+{
+  const k=alloc.kellyOf({price:100,up:150,base:120,down:70,prob:0.25,pBase:0.5});
+  eq('rs 세 개', k.rs, [0.5,0.2,-0.3]);
+  eq('err 없음', k.err, undefined);
+  eq('f 가 kelly3 와 일치', Math.round(k.f*1e6)/1e6,
+     Math.round(alloc.kelly3([0.5,0.2,-0.3],[0.25,0.5,0.25])*1e6)/1e6);
+}
+
+grp('kellyOf — thinDown 은 가장 나쁜 시나리오 기준');
+{
+  // 하단 칸이 최악이 아닌 입력은 순서 검증에 걸리므로, 하단이 최악이되 얕은 경우로 본다.
+  const shallow=alloc.kellyOf({price:100,up:150,base:110,down:97,prob:0.25,pBase:0.5});
+  eq('최악 −3% → thinDown', shallow.thinDown, true);
+  const deep=alloc.kellyOf({price:100,up:150,base:120,down:70,prob:0.25,pBase:0.5});
+  eq('최악 −30% → 평상', deep.thinDown, false);
+  eq('얕은 하방의 f 가 폭발한다', Math.round(shallow.f), 23);
 }
 
 console.log('\n' + (fail ? `FAILED  ${pass} pass / ${fail} fail` : `OK  ${pass} pass`));

@@ -901,13 +901,21 @@ const THIN_DOWNSIDE=0.10;   // 하단이 현재가 대비 10% 이내면 비현�
 const MAX_SINGLE=0.40;      // 개별 종목 목표비중 상한 (정규화 후)
 
 function kellyOf(h){
-  const b=(h.up-h.price)/h.price;
-  const a=(h.price-h.down)/h.price;
-  const p=h.prob, q=1-h.prob;
-  if(a<=0) return {a,b,f:null,err:'하단이 현재가 이상'};
-  if(b<=0) return {a,b,f:null,err:'상단이 현재가 이하'};
-  const thinDown = a<THIN_DOWNSIDE;   // 하방 시나리오 비현실적 플래그
-  return {a:+a.toFixed(3),b:+b.toFixed(3),f:p/a-q/b,thinDown};
+  if(h.base===undefined||h.base===null||h.base===''||h.pBase===undefined||h.pBase===null)
+    return {rs:null,f:null,err:'Base 미입력 — 켈리 보류'};
+  const rr=t=>(t-h.price)/h.price;
+  const rs=[rr(h.up), rr(h.base), rr(h.down)];
+  const round=rs.map(x=>+x.toFixed(3));
+  const pBull=h.prob, pBase=h.pBase, pBear=1-pBull-pBase;
+  if(pBear<-1e-9) return {rs:round,f:null,err:'확률 합이 1을 넘습니다'};
+  if(!(rs[0]>=rs[1] && rs[1]>=rs[2]))
+    return {rs:round,f:null,err:'상단 ≥ Base ≥ 하단이 아닙니다'};
+  if(Math.min(...rs)>=0) return {rs:round,f:null,err:'하방 시나리오가 없습니다'};
+  const f=kelly3(rs,[pBull,pBase,pBear]);
+  if(f===null) return {rs:round,f:null,err:'시나리오가 퇴화했습니다'};
+  // 가장 나쁜 시나리오가 얕으면 켈리가 폭발한다 (실측: 최악 −3% → f≈23)
+  const thinDown = Math.abs(Math.min(...rs))<THIN_DOWNSIDE;
+  return {rs:round,f,thinDown};
 }
 
 /* ---- ledger aggregation ---- */
@@ -1003,16 +1011,20 @@ function toKRW(h, priceLocal, shares){
 }
 function ccySym(ccy){return ccy==='USD'?'$':'₩';}
 function updatePreview(){
-  const price=numVal('i-price'),up=numVal('i-up'),down=numVal('i-down');
-  const prob=readProb();
-  $('prob-val').textContent = prob===null?'패배 —':'패배 '+Math.round((1-prob)*100)+'%';
-  if(isNaN(price)||isNaN(up)||isNaN(down)||prob===null){$('kelly-preview').textContent='가격·목표 입력 시 켈리 미리보기';return;}
-  const k=kellyOf({price,up,down,prob});
+  const price=numVal('i-price'),up=numVal('i-up'),down=numVal('i-down'),base=numVal('i-base');
+  const P=readProbs();
+  $('prob-val').textContent = P===null?'합 —':'합 '+Math.round((P.pBull+P.pBase+P.pBear)*100)+'%';
+  if(isNaN(price)||isNaN(up)||isNaN(down)||isNaN(base)||P===null){
+    $('kelly-preview').textContent='가격·세 시나리오·확률 입력 시 켈리 미리보기';return;
+  }
+  const k=kellyOf({price,up,down,base,prob:P.pBull,pBase:P.pBase});
   if(k.f===null){$('kelly-preview').innerHTML='<span style="color:var(--bad)">'+k.err+'</span>';return;}
   const col=k.f>0?'var(--good)':'var(--bad)';
-  let html=`이익폭 b=${k.b} · 손실폭 a=${k.a} · 켈리 f=<span style="color:${col}">${fmtPct(k.f)}</span>`;
+  let html=`Bull ${fmtPct(k.rs[0])} · Base ${fmtPct(k.rs[1])} · Bear ${fmtPct(k.rs[2])}`
+    +` · 켈리 f=<span style="color:${col}">${fmtPct(k.f)}</span>`;
   if(k.thinDown){
-    html+=`<br><span style="color:var(--warn);font-size:11px">⚠ 하단이 현재가의 −${((1-down/price)*100).toFixed(0)}% — 하방이 얕아 켈리 과대평가. 실제 최악 하락(−20~40%) 권장</span>`;
+    html+=`<br><span style="color:var(--warn);font-size:11px">⚠ 최악 시나리오가 `
+      +`${fmtPct(Math.min(...k.rs))} — 하방이 얕아 켈리 과대평가. 실제 최악 하락(−20~40%) 권장</span>`;
   }
   $('kelly-preview').innerHTML=html;
 }
@@ -2488,13 +2500,12 @@ function openReassessModal(hid){
 }
 function reDelta(){
   const h=holdings.find(x=>x.id===reCtx.hid); if(!h) return;
-  const up=numVal('re-up'), down=numVal('re-down');
-  let prob=parseFloat($('re-prob').value);
+  const up=numVal('re-up'), down=numVal('re-down'), base=numVal('re-base');
+  const prob=parseFloat($('re-prob').value)/100, pBase=parseFloat($('re-pbase').value)/100;
   const d=$('re-delta');
   if(isNaN(up)||isNaN(down)||isNaN(prob)||up<=0||down<=0){ d.style.display='none'; return; }
-  prob=Math.min(99,Math.max(1,prob))/100;
   // 새 가정으로 켈리 미리보기
-  const kNew=kellyOf({price:h.price,up,down,prob});
+  const kNew=kellyOf({price:h.price,up,down,base,prob,pBase});
   const kOld=kellyOf(h);
   if(kNew.f===null){ d.style.display='block'; d.innerHTML=`<span style="color:var(--bad)">${kNew.err}</span>`; return; }
   const parts=[];
