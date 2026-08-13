@@ -1397,7 +1397,9 @@ function render(){
         const lastReassess=reassessList.length?reassessList[reassessList.length-1]:null;
         const thesisWorsened = lastReassess && (
           (lastReassess.prevProb!==undefined && lastReassess.prob<lastReassess.prevProb) ||
-          (lastReassess.prevUp!==undefined && lastReassess.up<lastReassess.prevUp));
+          (lastReassess.prevUp!==undefined && lastReassess.up<lastReassess.prevUp) ||
+          (lastReassess.prevPBase!==undefined &&
+            (1-lastReassess.prob-lastReassess.pBase) > (1-lastReassess.prevProb-lastReassess.prevPBase)));
         // 최근 '보유 유지' 근거가 최신 재평가 이후에 기록됐는지
         const keepList=(h.ledger||[]).filter(e=>e.type==='keep');
         const lastKeep=keepList.length?keepList[keepList.length-1]:null;

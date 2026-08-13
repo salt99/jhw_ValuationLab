@@ -605,6 +605,30 @@
        banners.length === 1 && banners[0].textContent.includes('수정'),
        banners.length ? banners[0].textContent : '배너 없음');
 
+    /* ---------- 24. Bear확률 상승만으로도 논지훼손 판별 (F5) ---------- */
+    holdings = [{
+      id:'f5t', name:'__베어확률상승', price:100, up:150, down:70, base:120,
+      prob:0.25, pBase:0.15,                 // pBear = 0.60 → 켈리 음수(비활성)
+      startQ:currentQGuess(), ccy:'USD', fx:1,
+      ledger:[{
+        id:'f5le', quarter:currentQGuess(), date:'2026-01-01', type:'reassess',
+        up:150, down:70, base:120, prob:0.25, pBase:0.15,
+        prevUp:150, prevDown:70, prevBase:120, prevProb:0.25, prevPBase:0.50,  // prevPBear 0.25 → 0.60
+        reason:'베어 확률 상승'
+      }]
+    }];
+    /* 배너는 두 UI 상태를 동시에 만족해야 렌더된다 — 매매일지 분기(alloc 아님)이고,
+       그 종목 카드가 펼쳐져 있어야 한다(index_kelly.html:1470 의 ${isExpanded ? ...}). */
+    viewMode='journal';
+    expandedJournal['f5t']=true;
+    render();
+    const f5Banners=[...document.querySelectorAll('.inactive-banner')];
+    ok('승률·상단은 그대로여도 비활성 배너가 뜬다', f5Banners.length === 1,
+       f5Banners.length);
+    ok('Bear확률 상승이 논지훼손으로 잡힌다',
+       f5Banners.length === 1 && f5Banners[0].textContent.includes('논지 훼손'),
+       f5Banners.length ? f5Banners[0].textContent.trim() : '배너 없음');
+
   } catch (e) {
     R.push({ n: '스크립트 실행 중 예외', pass: false, got: e && e.message });
     console.error(e);
