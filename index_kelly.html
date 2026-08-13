@@ -308,7 +308,7 @@
 <div class="wrap">
 <header>
   <h1>켈리 · 분할매수 플래너</h1>
-  <div class="tagline"><b>단기채권 100%</b>에서 출발. 종목의 상단·하단·승률을 넣으면 켈리 비율(풀 켈리)로 <b>목표 포트폴리오</b>를 잡고, <b>8분기 분할매수</b> 매매일지를 만듭니다. 매 분기 실적발표가 체크포인트이며, 채권은 매수 대기 실탄입니다.</div>
+  <div class="tagline"><b>단기채권 100%</b>에서 출발. 종목의 상단·Base·하단과 시나리오 확률을 넣으면 켈리 비율(풀 켈리)로 <b>목표 포트폴리오</b>를 잡고, <b>8분기 분할매수</b> 매매일지를 만듭니다. 매 분기 실적발표가 체크포인트이며, 채권은 매수 대기 실탄입니다.</div>
 </header>
 
 <div class="backup-bar" id="backup-bar">
@@ -427,7 +427,7 @@
 
 <div class="card">
   <div class="note">
-    <b>켈리 f</b> = p/a − q/b · a=하락손실률, b=상승이익률(현재가 기준)<br>
+    <b>켈리 f</b> = 세 시나리오의 <b>E[ln(1+f·r)]</b> 을 최대화하는 f · r=현재가 대비 수익률(상단·Base·하단), 확률 합 100%<br>
     <b>주식 목표</b> = 양수 켈리 합(<b>풀 켈리</b>, 100% 상한)에서 개별 상한을 자른 뒤의 합. 나머지는 채권.<br>
     <b>개별 종목 상한 30%</b> · 한 종목이 포트의 30%를 넘지 않게 제한하고, <b>초과분은 다른 종목이 아니라 채권으로</b> 보낸다. 그래서 종목이 1~2개뿐인 동안에는 주식 비중이 자연히 낮게 유지되고(1종목 30% · 2종목 최대 60%), 종목을 갖출수록 100%에 접근한다. <b>하방 검증</b>: 하단이 현재가 −10% 이내면 켈리가 폭증하므로 경고 — 실제 최악의 하락을 반영해야 함.<br>
     <b>8분기 분할</b> · 시작 분기 포함 매 실적발표가 체크포인트. 각 분기에 <b>매수·보류·매도</b>를 근거와 함께 기록. 보류분은 자연히 이월, 매도는 피셔 3규율로 사유 기록.<br>
@@ -531,7 +531,7 @@
       <span id="re-title">가정 재평가</span>
       <span class="modal-x" id="re-close">✕</span>
     </div>
-    <div class="re-intro" id="re-intro">분기 실적 점검 후 상단·하단·승률을 갱신합니다. 이전 값은 이력으로 보존되고, 켈리 목표가 재계산됩니다.</div>
+    <div class="re-intro" id="re-intro">분기 실적 점검 후 상단·Base·하단과 시나리오 확률을 갱신합니다. 이전 값은 이력으로 보존되고, 켈리 목표가 재계산됩니다.</div>
     <div class="prob-row" style="margin-top:12px;">
       <label>재평가 분기</label>
       <input type="text" id="re-quarter" style="width:100px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px;font-size:13px;font-family:var(--mono);text-align:center;">
@@ -546,8 +546,8 @@
     <div class="re-sum">확률 합 <span id="re-prob-val">—</span></div>
     <div class="re-delta" id="re-delta"></div>
     <div class="fld" style="margin-top:10px;">
-      <label>재평가 근거 (왜 상단·하단·승률이 바뀌었나)</label>
-      <textarea id="re-reason" rows="3" placeholder="예: 서비스 매출 성장률 14%→9% 둔화. 상단 목표를 $400→$380으로, 승률 55%→50%로 하향." style="background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:10px;font-size:12.5px;font-family:inherit;resize:vertical;"></textarea>
+      <label>재평가 근거 (왜 목표가·확률이 바뀌었나)</label>
+      <textarea id="re-reason" rows="3" placeholder="예: 서비스 매출 성장률 14%→9% 둔화. 상단 목표를 $400→$380으로, 상단확률 30%→20%로 하향." style="background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:10px;font-size:12.5px;font-family:inherit;resize:vertical;"></textarea>
     </div>
     <button class="btn primary" id="re-save" style="margin-top:12px;">재평가 저장 · 켈리 갱신</button>
   </div>
@@ -1341,7 +1341,7 @@ function render(){
       const reassessments=(h.ledger||[]).filter(e=>e.type==='reassess');
       const lastRe = reassessments.length?reassessments[reassessments.length-1]:null;
       const reLine = lastRe
-        ? `<div class="hold-reassess">최근 재평가 ${lastRe.quarter||lastRe.date||''}: 상단 ${fmtNum(lastRe.up)} · 하단 ${fmtNum(lastRe.down)} · 승률 ${Math.round(lastRe.prob*100)}%</div>`
+        ? `<div class="hold-reassess">최근 재평가 ${lastRe.quarter||lastRe.date||''}: 상단 ${fmtNum(lastRe.up)} · 하단 ${fmtNum(lastRe.down)} · 상단확률 ${Math.round(lastRe.prob*100)}%</div>`
         : '';
       return `<div class="hold"${colorOf[h.id]?` style="border-left-color:${colorOf[h.id]}"`:''}>
         <div class="hold-top">
@@ -1352,7 +1352,7 @@ function render(){
           </div>
           <div class="hold-right">
             <div class="hold-alloc ${w===0?'zero':''}">${fmtPct(w)}</div>
-            <button class="btn ghost sm" data-reassess="${h.id}" title="상단·하단·승률 재평가">📊</button>
+            <button class="btn ghost sm" data-reassess="${h.id}" title="목표가·확률 재평가">📊</button>
             <button class="btn ghost sm" data-edit="${h.id}" title="종목 정보 수정">✎</button>
             <button class="btn ghost sm" data-del="${h.id}">✕</button>
           </div>
@@ -1408,7 +1408,7 @@ function render(){
         // 켈리 음수(재평가로 매수 부적합) 종목: 이력은 유지하되 추가 매수 목표는 없음
         const kNow=kellyOf(h);
         const isInactive = r.inactive || kNow.f===null || kNow.f<=0;
-        // 음수 원인 판별: 최근 재평가에서 승률/상단을 낮췄으면 논지훼손, 아니면 가격상승
+        // 음수 원인 판별: 최근 재평가에서 상단확률/상단을 낮췄으면 논지훼손, 아니면 가격상승
         const reassessList=(h.ledger||[]).filter(e=>e.type==='reassess');
         const lastReassess=reassessList.length?reassessList[reassessList.length-1]:null;
         const thesisWorsened = lastReassess && (
@@ -1432,7 +1432,7 @@ function render(){
         let inactiveBanner='';
         if(isInactive){
           const causeStr = thesisWorsened
-            ? '<b style="color:var(--bad)">논지 훼손</b>(재평가로 승률·상단 하향)'
+            ? '<b style="color:var(--bad)">논지 훼손</b>(재평가로 상단확률·상단 하향)'
             : '가격 상승/밸류에이션 부담';
           const held = st.netShares;
           const heldStr = held>0 ? `보유 <b>${held.toLocaleString('ko-KR')}주</b>` : '보유분 없음';
@@ -2061,7 +2061,7 @@ function bindPipeline(){
     $('i-thesis').value=c.origin||'';   // 초기값일 뿐 — 고치면 고친 값이 저장된다
     $('i-name').scrollIntoView({behavior:'smooth', block:'center'});
     $('i-price').focus();
-    setStatus(`${c.name} 편입 — 가격·목표·승률을 입력하고 추가하세요`);
+    setStatus(`${c.name} 편입 — 가격·목표·확률을 입력하고 추가하세요`);
   }));
 }
 
@@ -2597,7 +2597,7 @@ function reDelta(){
   if(up!==h.up) parts.push(`상단 ${fmtNum(h.up)}→${fmtNum(up)}`);
   if(base!==h.base) parts.push(`Base ${fmtNum(h.base)}→${fmtNum(base)}`);
   if(down!==h.down) parts.push(`하단 ${fmtNum(h.down)}→${fmtNum(down)}`);
-  if(Math.round(prob*100)!==Math.round(h.prob*100)) parts.push(`승률 ${Math.round(h.prob*100)}→${Math.round(prob*100)}%`);
+  if(Math.round(prob*100)!==Math.round(h.prob*100)) parts.push(`상단확률 ${Math.round(h.prob*100)}→${Math.round(prob*100)}%`);
   if(Math.round(pBase*100)!==Math.round(h.pBase*100)) parts.push(`Base확률 ${Math.round(h.pBase*100)}→${Math.round(pBase*100)}%`);
   const changeStr = parts.length?parts.join(' · '):'변경 없음';
   const fOld=kOld.f!==null?fmtPct(kOld.f):'—';
