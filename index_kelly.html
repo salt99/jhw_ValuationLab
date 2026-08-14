@@ -1037,6 +1037,17 @@ function toKRW(h, priceLocal, shares){
   return priceLocal*shares*(ccyOf(h)==='USD'?fxOf(h):1);
 }
 function ccySym(ccy){return ccy==='USD'?'$':'₩';}
+/* 시나리오 한 줄 "$264 ▲300 ◆280 ▼200 · 55/25/20" — 목표 포트폴리오·매매일지 공용.
+   확률 셋은 앞의 ▲◆▼ 순서에 1:1 대응하고 항상 합이 100이다 (하단은 잔여로 계산).
+   Base 미입력 레거시 보유분은 ◆와 확률 묶음을 뺀다 (kellyOf 와 같은 판정). */
+function scenLine(h){
+  const s=ccySym(ccyOf(h));
+  const px=`${s}${fmtNum(h.price)} ▲${fmtNum(h.up)}`;
+  if(h.base===undefined||h.base===null||h.base===''||h.pBase===undefined||h.pBase===null)
+    return `${px} ▼${fmtNum(h.down)}`;
+  const pBull=Math.round(h.prob*100), pBase=Math.round(h.pBase*100);
+  return `${px} ◆${fmtNum(h.base)} ▼${fmtNum(h.down)} · ${pBull}/${pBase}/${100-pBull-pBase}`;
+}
 function updatePreview(){
   const price=numVal('i-price'),up=numVal('i-up'),down=numVal('i-down'),base=numVal('i-base');
   const P=readProbs();
@@ -1347,7 +1358,7 @@ function render(){
         <div class="hold-top">
           <div style="flex:1;">
             <div class="hold-name">${escapeHtml(h.name)}</div>
-            <div class="hold-detail">${ccySym(ccyOf(h))}${fmtNum(h.price)} → ▲${fmtNum(h.up)} / ▼${fmtNum(h.down)} · p=${Math.round(h.prob*100)}%${ccyOf(h)==='USD'?' · $':''}</div>
+            <div class="hold-detail">${scenLine(h)}</div>
             <div class="hold-kelly ${(invalid||neg)?'neg':''}">켈리 f=${kellyStr}${neg?' · 제외(이 가격 부적합)':''}${capNote}</div>
           </div>
           <div class="hold-right">
@@ -1481,7 +1492,7 @@ function render(){
             <div class="tl-hold-target">${isInactive?'<span style="color:var(--faint)">비활성</span>':posLine}</div>
             <span class="tl-caret">${isExpanded?'▾':'▸'}</span>
           </div>
-          <div class="tl-hold-sub">${h.startQ} 시작 · 현재가 ${_sym}${fmtNum(h.price)} · 하단 ▼${_sym}${fmtNum(h.down)}${sharesLine}${sellFlag}</div>
+          <div class="tl-hold-sub">${h.startQ} 시작 · ${scenLine(h)}${sharesLine}${sellFlag}</div>
           <div class="exec-track"><div class="exec-track-fill" style="width:${investedPct}%"></div></div>
           ${isExpanded ? `
           ${punchWarn}${inactiveBanner}
