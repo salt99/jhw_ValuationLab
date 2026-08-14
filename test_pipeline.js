@@ -430,6 +430,8 @@ grp('kellyOf — err 경로');
   eq('pBase 미입력', alloc.kellyOf(H({pBase:undefined})).err, 'Base 미입력 — 켈리 보류');
   eq('순서 위반 (Base < 하단)', alloc.kellyOf(H({base:60})).err, '상단 ≥ Base ≥ 하단이 아닙니다');
   eq('하방 없음 (전부 현재가 이상)', alloc.kellyOf(H({down:110})).err, '하방 시나리오가 없습니다');
+  eq('상방 없음 (전부 현재가 아래)', alloc.kellyOf(H({up:90,base:80,down:70})).err, '상단 목표가조차 현재가 이하 — 매수 구간이 아닙니다');
+  eq('상방 없음 — 상단이 현재가와 같은 경계', alloc.kellyOf(H({up:100,base:80,down:70})).err, '상단 목표가조차 현재가 이하 — 매수 구간이 아닙니다');
   eq('확률 합 초과', alloc.kellyOf(H({prob:0.8,pBase:0.5})).err, '확률 합이 1을 넘습니다');
   eq('퇴화 (p_base=1)', alloc.kellyOf(H({base:100,prob:0,pBase:1})).err, '시나리오가 퇴화했습니다');
 }
