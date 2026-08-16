@@ -11,7 +11,7 @@
 켈리 도구는 `d523106` 그대로 배포돼 있다 — 도구 코드는 한 줄도 안 건드렸다.
 작업은 전부 분석 repo 이고 **전부 푸시됐다**(`ea2ceb3`…`a121516`, 6커밋).
 
-한 일 여섯 가지:
+한 일 일곱 가지:
 
 1. **TSMC 재작성 (v2.0)** — `_template` 뼈대로 옮기며 TOOL 01·02 를 실제로 채웠다.
    판정: **능력범위 «경계 지역»(5/6) · 프리미엄 «자격 높음»(19/22=86%) · 밸류에이션
@@ -27,11 +27,11 @@
    일어나며, 무엇으로 그 세계에 있음을 아는지. 기각 조건 번호와 직접 묶었다
 5. **디렉터리 재구성 + posts/** — `companies/` `masters/` `posts/` 버킷.
    **이전 HANDOFF 의 `docs/analysis/tsmc/` 류 경로는 전부 무효다**
+6. **공개용 분석 글** — `posts/2026-08-15-tsmc.md` (ultracode 워크플로 12에이전트,
+   내부 흔적·개인정보·원문 인용 배제 검증 완료)
 7. **시나리오별 연 수익률 표 (v3.1)** — 현재가 매수 시 BEAR −3.2%/년 · BASE +5.3% ·
    BULL +8.3%. 정직한 최선의 세계에서도 요구수익률 미달. **앵커 파생인데 앵커 검사기
    감시 밖** — 갱신 공식은 표 옆에 병기돼 있다
-6. **공개용 분석 글** — `posts/2026-08-15-tsmc.md` (ultracode 워크플로 12에이전트,
-   내부 흔적·개인정보·원문 인용 배제 검증 완료)
 
 ### ⚠ 직전 HANDOFF 의 오류 두 건 — 이번에 코드 대조로 잡았다
 
@@ -53,7 +53,7 @@ docs/analysis/                          ← private repo, 부모 .gitignore:3 �
 ├── _template/          루트 유지
 ├── tools/              루트 유지 — verify-template-rules.js(82검사)
 │                         · verify-tsmc-depreciation.js · verify-tsmc-anchor.js
-├── companies/tsmc/     tsmc-분석.md(v3.0) · tsmc-스터디.md(v1.1) · tsmc-히스토리.md
+├── companies/tsmc/     tsmc-분석.md(v3.1) · tsmc-스터디.md(v1.1) · tsmc-히스토리.md
 ├── masters/terry-smith/
 └── posts/              2026-08-15-tsmc.md + README.md(내보내기 규칙)
 ```
