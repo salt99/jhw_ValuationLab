@@ -198,6 +198,18 @@
   .pl-meta{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:5px;}
   .pl-trigger{font-size:11px;color:var(--ink);margin-top:5px;line-height:1.5;}
   .pl-origin{font-size:11px;color:var(--dim);margin-top:5px;line-height:1.5;font-style:italic;}
+  .pl-thesis{font-size:11.5px;color:var(--ink);margin-top:6px;line-height:1.55;}
+  .pl-fair{font-size:11px;color:var(--dim);margin-top:6px;line-height:1.6;}
+  .pl-fair b{font-family:var(--mono);color:var(--ink);}
+  .pl-fair .pl-badge{margin-left:4px;}
+  .mm-dist-box{margin-top:12px;padding:10px;border:1px dashed var(--line);border-radius:9px;}
+  .mm-dist-head{font-size:10.5px;color:var(--faint);}
+  .mm-dist-head b{color:var(--warn);}
+  .mm-dist{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-top:7px;line-height:1.6;}
+  .mm-dist b{color:var(--ink);}
+  .mm-log-head{font-size:10px;color:var(--faint);margin-top:12px;}
+  .mm-log-row{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:4px;}
+  .mm-log-row span{color:var(--faint);margin-right:8px;}
   .pl-stage{display:flex;gap:10px;margin-top:7px;flex-wrap:wrap;}
   .pl-stage label{display:flex;align-items:center;gap:4px;font-size:11px;
     color:var(--dim);cursor:pointer;}
@@ -652,17 +664,36 @@
   </div>
 </div>
 
-<!-- 검토 메모 모달 — 계기와 작업 메모. 작업 기억이라 잠금이 없다(PRD §7-D19) -->
+<!-- 논지·적정가 모달 — 계기·논지·적정가 범위·작업 메모. 작업 기억이라 잠금이 없다(PRD §7-D19) -->
 <div class="modal-bg" id="memoModal" style="display:none">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
-      <span id="mm-title">검토 메모</span>
+      <span id="mm-title">논지 · 적정가</span>
       <span class="modal-x" id="mm-close">✕</span>
     </div>
     <div class="fld" style="margin-top:12px;"><label>왜 보나</label>
       <input class="txt" id="mm-origin" placeholder="예: 창고형 리테일 해자"></div>
-    <div class="fld" style="margin-top:10px;"><label>메모</label>
-      <textarea id="mm-note" rows="3" placeholder="예: 10-K 3장까지 읽음"></textarea></div>
+    <div class="fld" style="margin-top:10px;"><label>투자 논지</label>
+      <textarea id="mm-thesis" rows="3" placeholder="예: 회원료가 영업이익의 100%를 넘고, 갱신율 90%가 가격 인상에 안 깨진다"
+        style="background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+        border-radius:8px;padding:10px;font-size:12.5px;font-family:inherit;resize:vertical;"></textarea></div>
+    <div class="add-grid" style="grid-template-columns:1fr 1fr;margin-top:10px;">
+      <div class="fld"><label>적정가 하단 ($)</label><input id="mm-fair-low" inputmode="decimal" placeholder="20"></div>
+      <div class="fld"><label>적정가 상단 ($)</label><input id="mm-fair-high" inputmode="decimal" placeholder="31"></div>
+    </div>
+    <div class="fld" style="margin-top:10px;"><label>근거 (선택)</label>
+      <input class="txt" id="mm-fair-basis" placeholder="예: PBR 1.5~2.3 · BASE ROE 17~20% · N=10"></div>
+    <div class="mm-dist-box">
+      <div class="mm-dist-head">현재가 대비 — <b>저장하지 않습니다</b></div>
+      <div class="fld" style="margin-top:7px;"><label>현재가 ($)</label>
+        <input id="mm-price" inputmode="decimal" placeholder="75.95"></div>
+      <div class="mm-dist" id="mm-dist"></div>
+    </div>
+    <div class="fld" style="margin-top:10px;"><label>검토 메모</label>
+      <textarea id="mm-note" rows="3" placeholder="예: 10-K 3장까지 읽음"
+        style="background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+        border-radius:8px;padding:10px;font-size:12.5px;font-family:inherit;resize:vertical;"></textarea></div>
+    <div id="mm-log"></div>
     <button class="btn primary" id="mm-save">저장</button>
   </div>
 </div>
@@ -785,8 +816,51 @@ function stageOf(c){
   return {circle:!!s.circle, premium:!!s.premium, val:!!s.val};
 }
 
+/* 적정가 갱신 임계(일). 분기 점검 주기이고, 분석 저장소의 앵커 검사기가 주가·자본 시점
+   간격에 쓰는 값과 같다 — 같은 규율을 같은 숫자로 쓴다. */
+const FAIR_STALE_DAYS = 100;
+
+/* 적정가 범위를 정한 날로부터 지난 일수. 범위가 없으면 null. */
+function fairStaleDays(c, now){
+  const d = Date.parse((c && c.fairDate) || '');
+  if(!Number.isFinite(d)) return null;
+  return Math.floor((now - d)/864e5);
+}
+function isFairStale(c, now){
+  const n = fairStaleDays(c, now);
+  return n !== null && n > FAIR_STALE_DAYS;
+}
+/* 현재가와 적정가 범위의 거리. 현재가는 저장하지 않는 즉석 입력이라 c 를 건드리지 않는다.
+   toLow/toHigh 는 현재가에서 그 값까지의 변화율 — 음수면 그만큼 빠져야 닿는다.
+   순서를 안 가린다 — 저장 시엔 맞바꾸지만 타이핑 중에는 상단을 먼저 치는 순간이 있다. */
+function fairDistance(c, price){
+  const a = c && c.fairLow, b = c && c.fairHigh;
+  if(!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  if(!Number.isFinite(price) || price <= 0) return null;
+  const lo = Math.min(a,b), hi = Math.max(a,b);
+  return { toLow: lo/price - 1, toHigh: hi/price - 1, inRange: price >= lo && price <= hi };
+}
+/* 적정가 갱신 — 값이 실제로 바뀔 때만 옛 값을 이력에 쌓는다. 논지·근거만 고쳐도 쌓으면
+   오탈자 수정이 이력을 오염시켜 «내 적정가가 주가를 따라갔나» 점검이 무의미해진다.
+   low/high 가 숫자가 아니면 범위를 비우는 것으로 본다 — 비우기도 갱신이라 이력에 남는다.
+   c 를 직접 고친다(호출부가 저장 직전에 부른다). 바뀌었으면 true. */
+function pushFairLog(c, low, high, today){
+  const had = Number.isFinite(c.fairLow) && Number.isFinite(c.fairHigh);
+  const now = Number.isFinite(low) && Number.isFinite(high);
+  if(!had && !now) return false;
+  if(had && now && c.fairLow === low && c.fairHigh === high) return false;
+  if(had){
+    c.fairLog = c.fairLog || [];
+    c.fairLog.unshift({date: c.fairDate || '', low: c.fairLow, high: c.fairHigh});
+  }
+  if(now){ c.fairLow = low; c.fairHigh = high; c.fairDate = today; }
+  else { delete c.fairLow; delete c.fairHigh; delete c.fairDate; }
+  return true;
+}
+
 /* 기각 등재 시 검토용 작업 기억을 버린다(PRD §7-D19). 편입 때 버리는 것과 대칭이다.
-   기존 기각 기록을 수정할 때는 애초에 이 필드들이 없으므로 건드리지 않는다. */
+   기존 기각 기록을 수정할 때는 애초에 이 필드들이 없으므로 건드리지 않는다.
+   thesis·적정가는 여기서 안 버린다 — origin 처럼 판단이고, 3년 검증이 대조할 원문이다. */
 function stripReviewFields(c, editing){
   if(!editing){ delete c.stage; delete c.reviewNote; }
   return c;
@@ -1842,6 +1916,18 @@ const REJECT_LABELS={
 const VERDICT_LABELS={right:'기각이 옳았음', wrong:'기각이 틀렸음', unclear:'판단 보류'};
 
 /* 기각·칸 회수 카드 — 두 섹션이 같은 마크업을 쓴다 */
+/* 적정가 줄. 검토중에는 낡음 배지를 붙이고, 기각 기록에는 안 붙인다 — 기각된 판단은
+   갱신 대상이 아니라 3년 뒤 검증할 원문이다. */
+function fairLine(c, now, withStale){
+  if(!Number.isFinite(c.fairLow)||!Number.isFinite(c.fairHigh)) return '';
+  const basis=c.fairBasis?` · ${escapeHtml(c.fairBasis)}`:'';
+  const n=fairStaleDays(c, now);
+  const tag = (withStale && isFairStale(c, now))
+    ? `<span class="pl-badge due">⚠ ${n}일 경과 — 갱신 필요</span>`
+    : `<span class="pl-badge">${escapeHtml(c.fairDate||'')} 기준</span>`;
+  return `<div class="pl-fair">적정 <b>$${fmtNum(c.fairLow)} ~ $${fmtNum(c.fairHigh)}</b>`
+       + `${basis}${tag}</div>`;
+}
 function rejectCard(c, now){
   const left=verifyDaysLeft(c, now);
   let vBadge, vAct='';
@@ -1870,6 +1956,8 @@ function rejectCard(c, now){
     <div class="pl-top"><span class="pl-name">${escapeHtml(c.name)}</span>
       <span class="pl-date">${escapeHtml(c.rejectedDate||'')}</span></div>
     ${c.origin?`<div class="pl-origin">“${escapeHtml(c.origin)}”</div>`:''}
+    ${c.thesis?`<div class="pl-thesis">${escapeHtml(c.thesis)}</div>`:''}
+    ${fairLine(c, now, false)}
     <div class="pl-meta">${priceStr} · ${escapeHtml(REJECT_LABELS[c.rejectReason]||c.rejectReason||'')}</div>
     ${c.trigger?`<div class="pl-trigger">↻ ${escapeHtml(c.trigger)}</div>`:''}
     ${c.note?`<div class="pl-trigger">${escapeHtml(c.note)}</div>`:''}
@@ -1927,11 +2015,13 @@ function renderPipeline(){
         <div class="pl-top"><span class="pl-name">${escapeHtml(c.name)}</span>
           <span class="pl-date">${days}일 · ${escapeHtml(c.startDate||'')}</span></div>
         ${c.origin?`<div class="pl-origin">“${escapeHtml(c.origin)}”</div>`:''}
+        ${c.thesis?`<div class="pl-thesis">${escapeHtml(c.thesis)}</div>`:''}
+        ${fairLine(c, now, true)}
         <div class="pl-stage">${box('circle','능력범위')}${box('premium','프리미엄')}${box('val','밸류에이션')}</div>
         <div class="pl-act">
           <button class="btn ghost" data-plrej="${c.id}">기각</button>
           <button class="btn ghost" data-pladopt="${c.id}">편입</button>
-          <button class="btn ghost" data-plmemo="${c.id}">✎ 메모</button>
+          <button class="btn ghost" data-plmemo="${c.id}">✎ 논지·적정가</button>
           <button class="btn ghost" data-pldel="${c.id}">삭제</button>
         </div></div>`;
     });
@@ -2013,29 +2103,72 @@ function openHistModal(holdingId){
 $('hist-close').addEventListener('click',()=>{ $('histModal').style.display='none'; });
 $('histModal').addEventListener('click',e=>{ if(e.target===$('histModal'))$('histModal').style.display='none'; });
 
-/* 검토 메모 — 계기와 작업 메모를 함께 고친다. 편입되면 계기만 h.thesis로 넘어간다. */
+/* 논지·적정가 — 계기·논지·적정가 범위·작업 메모를 함께 고친다.
+   편입되면 논지(없으면 계기)가 h.thesis로 넘어간다. 적정가는 안 넘어간다 — 보유 단계의
+   목표가(up/base/down)는 다른 개념이고, 초기값으로 밀어 넣으면 검증 없이 굳는다. */
 let memoCid=null;
 function openMemoModal(cid){
   const c=candidates.find(x=>x.id===cid); if(!c) return;
   memoCid=cid;
-  $('mm-title').textContent=`${c.name} · 검토 메모`;
+  $('mm-title').textContent=`${c.name} · 논지·적정가`;
   $('mm-origin').value=c.origin||'';
+  $('mm-thesis').value=c.thesis||'';
+  $('mm-fair-low').value=Number.isFinite(c.fairLow)?c.fairLow:'';
+  $('mm-fair-high').value=Number.isFinite(c.fairHigh)?c.fairHigh:'';
+  $('mm-fair-basis').value=c.fairBasis||'';
   $('mm-note').value=c.reviewNote||'';
+  $('mm-price').value='';        // 현재가는 저장하지 않으므로 열 때마다 빈 칸에서 시작한다
+  renderFairDist();
+  renderFairLog(c);
   $('memoModal').style.display='flex';
 }
+/* 타이핑 중인 값으로 계산한다 — 저장된 후보를 보면 아직 안 누른 수정이 반영되지 않는다. */
+function renderFairDist(){
+  const d=fairDistance({fairLow:parseFloat($('mm-fair-low').value),
+                        fairHigh:parseFloat($('mm-fair-high').value)},
+                       parseFloat($('mm-price').value));
+  if(!d){ $('mm-dist').textContent='적정가 범위와 현재가를 넣으면 거리를 계산합니다'; return; }
+  const p=parseFloat($('mm-price').value);
+  $('mm-dist').innerHTML = d.inRange
+    ? `현재가 <b>$${fmtNum(p)}</b> — <b>적정 구간 안</b> (하단까지 ${fmtPct(d.toLow)})`
+    : `상단까지 <b>${fmtPct(d.toHigh)}</b> · 하단까지 <b>${fmtPct(d.toLow)}</b> — 구간 ${d.toHigh<0?'위':'아래'}`;
+}
+function renderFairLog(c){
+  const L=c.fairLog||[];
+  $('mm-log').innerHTML = !L.length ? '' :
+    `<div class="mm-log-head">갱신 이력 (옛 값)</div>`
+    + L.map(e=>`<div class="mm-log-row"><span>${escapeHtml(e.date||'—')}</span>`
+        +`$${fmtNum(e.low)} ~ $${fmtNum(e.high)}</div>`).join('');
+}
+['mm-fair-low','mm-fair-high','mm-price'].forEach(id=>
+  $(id).addEventListener('input', renderFairDist));
 $('mm-close').addEventListener('click',()=>{ $('memoModal').style.display='none'; });
 $('memoModal').addEventListener('click',e=>{
   if(e.target===$('memoModal')) $('memoModal').style.display='none';
 });
 $('mm-save').addEventListener('click',()=>{
   const c=candidates.find(x=>x.id===memoCid); if(!c) return;
+  const loRaw=$('mm-fair-low').value.trim(), hiRaw=$('mm-fair-high').value.trim();
+  if((loRaw==='')!==(hiRaw===''))
+    { setStatus('적정가는 하단과 상단을 함께 입력하세요',true); return; }
+  let lo=NaN, hi=NaN;
+  if(loRaw!==''){
+    lo=parseFloat(loRaw); hi=parseFloat(hiRaw);
+    if(!(lo>0)||!(hi>0)){ setStatus('적정가는 0보다 큰 숫자여야 합니다',true); return; }
+    if(lo>hi) [lo,hi]=[hi,lo];   // 뒤집혀 들어오면 맞바꾼다 — 카드에 «하단 ~ 상단»으로 찍힌다
+  }
   const o=$('mm-origin').value.trim();
+  const t=$('mm-thesis').value.trim();
+  const b=$('mm-fair-basis').value.trim();
   const n=$('mm-note').value.trim();
   if(o) c.origin=o; else delete c.origin;          // 빈 값은 필드를 지운다
+  if(t) c.thesis=t; else delete c.thesis;
+  if(b) c.fairBasis=b; else delete c.fairBasis;
   if(n) c.reviewNote=n; else delete c.reviewNote;
+  const changed=pushFairLog(c, lo, hi, todayStr());
   save(); render();
   $('memoModal').style.display='none';
-  setStatus('검토 메모 저장됨: '+c.name);
+  setStatus((changed?'적정가 갱신됨: ':'저장됨: ')+c.name);
 });
 
 function bindPipeline(){
@@ -2073,7 +2206,7 @@ function bindPipeline(){
     const c=candidates.find(x=>x.id===b.dataset.pladopt); if(!c) return;
     pendingAdoptId=c.id;
     $('i-name').value=c.name;
-    $('i-thesis').value=c.origin||'';   // 초기값일 뿐 — 고치면 고친 값이 저장된다
+    $('i-thesis').value=c.thesis||c.origin||'';   // 초기값일 뿐 — 고치면 고친 값이 저장된다
     $('i-name').scrollIntoView({behavior:'smooth', block:'center'});
     $('i-price').focus();
     setStatus(`${c.name} 편입 — 가격·목표·확률을 입력하고 추가하세요`);

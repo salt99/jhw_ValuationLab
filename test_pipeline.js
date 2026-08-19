@@ -7,7 +7,8 @@ if (!m) { console.error('PIPELINE PURE 블록을 찾지 못했습니다'); proce
 const api = new Function(m[0] + `
   return {GRACE_MS, VERIFY_DAYS, isEditable, isSeeded, verifyDaysLeft, rejectionStats, migrateCandidates,
           isThesisBroken, isThesisReject, livePlanHoldings, pctClamp, needsPunchBack,
-          stageOf, stripReviewFields, kelly3};
+          stageOf, stripReviewFields, kelly3,
+          FAIR_STALE_DAYS, fairStaleDays, isFairStale, fairDistance, pushFairLog};
 `)();
 
 /* compute()는 PURE 블록 밖에 있고 holdings/candidates를 전역으로 읽는다. 배분 수식도
@@ -482,6 +483,65 @@ grp('compute — Base 미입력 회귀');
   eq('전부 미입력이면 pos 가 빈다', only.pos.length, 0);
   eq('전부 미입력이면 equityScale 0', only.equityScale, 0);
   eq('전부 미입력이면 현금 100%', only.cashWeight, 1);
+}
+
+/* ---- 적정가 범위 ---- */
+grp('fairStaleDays / isFairStale');
+{
+  const D0 = Date.parse('2026-08-09T00:00:00Z');
+  eq('범위 없으면 null', api.fairStaleDays({}, D0), null);
+  eq('당일이면 0일', api.fairStaleDays({fairDate:'2026-08-09'}, D0), 0);
+  eq('100일 전이면 100일', api.fairStaleDays({fairDate:'2026-05-01'}, D0), 100);
+  eq('임계값(100일)은 아직 안 낡았다', api.isFairStale({fairDate:'2026-05-01'}, D0), false);
+  eq('101일이면 낡았다', api.isFairStale({fairDate:'2026-04-30'}, D0), true);
+  eq('날짜 없으면 낡지 않은 것으로 본다', api.isFairStale({}, D0), false);
+  eq('임계 상수는 100', api.FAIR_STALE_DAYS, 100);
+}
+
+grp('fairDistance');
+{
+  const c = {fairLow:20, fairHigh:31};
+  eq('범위 위 — 상단까지 음수', Math.round(api.fairDistance(c, 75.95).toHigh*1000)/1000, -0.592);
+  eq('범위 위 — 하단까지 음수', Math.round(api.fairDistance(c, 75.95).toLow*1000)/1000, -0.737);
+  eq('범위 위 — inRange false', api.fairDistance(c, 75.95).inRange, false);
+  eq('구간 안', api.fairDistance(c, 25).inRange, true);
+  eq('하단에 정확히 걸치면 구간 안', api.fairDistance(c, 20).inRange, true);
+  eq('상단에 정확히 걸치면 구간 안', api.fairDistance(c, 31).inRange, true);
+  eq('상단 바로 위는 구간 밖', api.fairDistance(c, 31.01).inRange, false);
+  eq('범위 아래 — 상단까지 양수', api.fairDistance(c, 10).toHigh, 31/10-1);
+  eq('범위 없으면 null', api.fairDistance({}, 50), null);
+  eq('가격 없으면 null', api.fairDistance(c, NaN), null);
+  eq('가격 0 이면 null', api.fairDistance(c, 0), null);
+  // 타이핑 중에는 상단을 먼저 치는 순간이 있다 — 뒤집혀도 같은 답이어야 한다
+  eq('뒤집힌 범위도 같은 답', api.fairDistance({fairLow:31, fairHigh:20}, 25),
+     api.fairDistance(c, 25));
+}
+
+grp('pushFairLog — 값이 바뀔 때만 쌓는다');
+{
+  const c = {};
+  eq('첫 입력은 변경', api.pushFairLog(c, 20, 31, '2026-08-19'), true);
+  eq('첫 입력은 이력을 안 만든다', c.fairLog, undefined);
+  eq('첫 입력의 기준일', c.fairDate, '2026-08-19');
+
+  eq('같은 값 재저장은 변경 아님', api.pushFairLog(c, 20, 31, '2026-09-01'), false);
+  eq('기준일이 안 밀린다', c.fairDate, '2026-08-19');
+  eq('이력도 안 쌓인다', c.fairLog, undefined);
+
+  eq('값이 바뀌면 변경', api.pushFairLog(c, 22, 34, '2026-09-01'), true);
+  eq('옛 값이 이력에 들어간다', c.fairLog, [{date:'2026-08-19', low:20, high:31}]);
+  eq('현재값 갱신', [c.fairLow, c.fairHigh, c.fairDate], [22, 34, '2026-09-01']);
+
+  eq('한쪽만 바뀌어도 변경', api.pushFairLog(c, 22, 40, '2026-10-01'), true);
+  eq('최신이 앞에 온다', c.fairLog[0], {date:'2026-09-01', low:22, high:34});
+  eq('이력 2건', c.fairLog.length, 2);
+
+  eq('비우기도 변경이다', api.pushFairLog(c, NaN, NaN, '2026-11-01'), true);
+  eq('비우면 필드가 사라진다',
+     ['fairLow','fairHigh','fairDate'].some(k=>k in c), false);
+  eq('비우기 전 값도 이력에 남는다', c.fairLog[0], {date:'2026-10-01', low:22, high:40});
+  eq('빈 상태에서 또 비우면 변경 아님', api.pushFairLog(c, NaN, NaN, '2026-12-01'), false);
+  eq('이력은 그대로 3건', c.fairLog.length, 3);
 }
 
 console.log('\n' + (fail ? `FAILED  ${pass} pass / ${fail} fail` : `OK  ${pass} pass`));
